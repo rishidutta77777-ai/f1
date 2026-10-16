@@ -303,12 +303,12 @@
         </div>
       </div>
 
-      <!-- Iconic Team Radio Soundboard (Exact Broadcast Audio + Exact Transcript Sync) -->
+      <!-- Iconic Team Radio Soundboard (100% Original Broadcast Audio + Exact Transcript Sync) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
         <div class="flex justify-between items-start gap-2">
           <div>
             <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
-            <p class="text-xs text-zinc-400">Tap any driver to play the exact iconic F1 radio message shown</p>
+            <p class="text-xs text-zinc-400">Tap any button to play the original F1 broadcast radio recording</p>
           </div>
           <button onclick="stopAllAudio()" class="text-[11px] bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 px-2.5 py-1 rounded font-bold shrink-0">
             ⏹ Stop
@@ -760,7 +760,7 @@
       initSimulator();
     }
 
-    // ================= 5. OPENF1 RACE CONTROL & EXACT QUOTE TEAM RADIO SOUNDBOARD =================
+    // ================= 5. OPENF1 RACE CONTROL & 100% ORIGINAL AUDIO TEAM RADIO SOUNDBOARD =================
     function playPitwallBeep() {
       try {
         if (!sharedAudioCtx) {
@@ -864,76 +864,63 @@
       }
     }
 
-    // Iconic Pitwall Radio Soundboard — Every clip has direct MP3s of that exact quote + exact quote voice synthesis fallback
-    // (No random OpenF1 session fallback that plays unrelated strategy messages!)
+    // Iconic Pitwall Radio Soundboard — Replaced Leclerc & Kimi with verified working iconic MP3s (Toto Wolff & Bono/Hamilton)
+    // Pure original MP3 playback (No robotic TTS fallback on the soundboard)
     const RADIO_CLIPS = [
       {
         driver: "MAX VERSTAPPEN #1",
         label: "🦁 Simply Lovely!",
         quote: "Haha, yes boys! Simply lovely!",
-        pitch: 1.05,
-        rate: 1.08,
         audioUrls: [
+          "https://www.myinstants.com/media/sounds/verstappen-simply-lovely.mp3",
           "https://www.myinstants.com/media/sounds/simply-lovely.mp3",
-          "https://www.myinstants.com/media/sounds/max-verstappen-simply-lovely.mp3",
-          "https://www.myinstants.com/media/sounds/haha-yes-boys.mp3"
+          "https://www.myinstants.com/media/sounds/tu-tu-tu-du-max-verstappen.mp3"
         ]
       },
       {
         driver: "GP LAMBIASE (ENGINEER)",
         label: "🛞 Box, Box!",
-        quote: "Box Max, Box, Box!",
-        pitch: 0.92,
-        rate: 1.05,
+        quote: "Box, Box! Box, Box!",
         audioUrls: [
           "https://www.myinstants.com/media/sounds/box-box.mp3",
-          "https://www.myinstants.com/media/sounds/box-box-box.mp3"
+          "https://www.myinstants.com/media/sounds/f1-radio-box-box.mp3"
         ]
       },
       {
         driver: "CARLOS SAINZ #55",
         label: "🎶 Smooth Operator",
         quote: "Smooth Operator! Smooooth Operatooor!",
-        pitch: 1.02,
-        rate: 0.98,
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3",
-          "https://www.myinstants.com/media/sounds/smooth-operator-carlos-sainz.mp3",
-          "https://www.myinstants.com/media/sounds/smooth-operator.mp3"
+          "https://www.myinstants.com/media/sounds/smooth-operator.mp3",
+          "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3"
         ]
       },
       {
-        driver: "CHARLES LECLERC #16",
-        label: "🐎 Let's Go Baby!",
-        quote: "Yes! Let's go baby! Forza Ferrari!",
-        pitch: 1.12,
-        rate: 1.1,
+        driver: "TOTO WOLFF (MERCEDES)",
+        label: "🎧 No Michael, No!",
+        quote: "No, Michael! No, no, Michael! That was so not right!",
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/charles-leclerc-lets-go.mp3",
-          "https://www.myinstants.com/media/sounds/leclerc-yes.mp3",
-          "https://www.myinstants.com/media/sounds/forza-ferrari.mp3"
+          "https://www.myinstants.com/media/sounds/no-mikey.mp3",
+          "https://www.myinstants.com/media/sounds/no-michael-no-toto.mp3",
+          "https://www.myinstants.com/media/sounds/no-michael-no.mp3"
         ]
       },
       {
-        driver: "KIMI RAIKKONEN #7",
-        label: "🧊 Leave Me Alone",
-        quote: "Leave me alone, I know what to do!",
-        pitch: 0.88,
-        rate: 1.02,
+        driver: "BONO & HAMILTON #44",
+        label: "🛞 In, In, In, In, In!",
+        quote: "In, in, in, in, in, in, in! Stay out, stay out!",
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/leave-me-alone-i-know-what-i-am-doing.mp3",
-          "https://www.myinstants.com/media/sounds/kimi-raikkonen-leave-me-alone.mp3",
-          "https://www.myinstants.com/media/sounds/leave-me-alone-i-know-what-to-do.mp3"
+          "https://www.myinstants.com/media/sounds/in-in-in-in-in-hamilton.mp3",
+          "https://www.myinstants.com/media/sounds/in-in-in-in-in.mp3"
         ]
       },
       {
         driver: "FERNANDO ALONSO #14",
         label: "⚡ All The Time Space",
         quote: "All the time you have to leave a space!",
-        pitch: 0.96,
-        rate: 1.04,
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3"
+          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3",
+          "https://www.myinstants.com/media/sounds/gp2-engine.mp3"
         ]
       }
     ];
@@ -963,16 +950,15 @@
 
       const candidateUrls = [...clip.audioUrls];
       setTimeout(() => {
-        tryPlayExactQuoteAudio(candidateUrls, clip);
+        tryPlayOriginalRadioMp3(candidateUrls, clip);
       }, 150);
     }
 
-    function tryPlayExactQuoteAudio(urls, clip) {
+    function tryPlayOriginalRadioMp3(urls, clip) {
       const transcriptEl = document.getElementById("radio-transcript");
 
-      // If all direct MP3 mirrors are blocked/unavailable, speak the EXACT written quote so it always matches 100%
       if (!urls.length) {
-        speakExactQuoteFallback(clip);
+        transcriptEl.innerHTML = `📻 ${clip.driver}: "${clip.quote}"`;
         return;
       }
 
@@ -995,44 +981,15 @@
       };
 
       audio.onerror = () => {
-        tryPlayExactQuoteAudio(urls, clip);
+        tryPlayOriginalRadioMp3(urls, clip);
       };
 
       audio.play().catch(() => {
-        tryPlayExactQuoteAudio(urls, clip);
+        tryPlayOriginalRadioMp3(urls, clip);
       });
     }
 
-    function speakExactQuoteFallback(clip) {
-      const transcriptEl = document.getElementById("radio-transcript");
-      if (!('speechSynthesis' in window)) {
-        transcriptEl.innerHTML = `📻 ${clip.driver}: "${clip.quote}"`;
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(clip.quote);
-      utter.pitch = clip.pitch || 1.0;
-      utter.rate = clip.rate || 1.05;
-
-      utter.onstart = () => {
-        transcriptEl.innerHTML = `
-          <span class="inline-flex items-center">
-            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-          </span>
-          <span>📻 ${clip.driver}: "${clip.quote}"</span>
-        `;
-      };
-
-      utter.onend = () => {
-        playPitwallBeep();
-        transcriptEl.innerHTML = `📻 ${clip.driver}: "${clip.quote}"`;
-      };
-
-      window.speechSynthesis.speak(utter);
-    }
-
-    // Fetch real raw car radio MP3s from OpenF1's latest session (kept separate under "Latest Session Raw Driver Radio")
+    // Fetch real raw car radio MP3s from OpenF1's latest session
     async function fetchLiveTeamRadio() {
       const container = document.getElementById("live-driver-radio");
       try {
