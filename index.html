@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1 Pitwall | Motorsport Weekend Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    .font-display { font-family: 'Orbitron', sans-serif; }
+    .font-sans { font-family: 'Inter', sans-serif; }
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      color: #a1a1aa;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #ffffff; background-color: #27272a; }
+    .active-tab { background-color: #dc2626 !important; color: #ffffff !important; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans selection:bg-red-600 selection:text-white">
+
+  <!-- Top Telemetry Bar -->
+  <header class="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span class="bg-red-600 text-white font-display font-black px-2.5 py-1 rounded text-sm tracking-wider">F1</span>
+        <h1 class="font-display font-bold text-lg md:text-xl tracking-wide">PITWALL HUB</h1>
+      </div>
+
+      <div class="flex items-center gap-4 text-xs md:text-sm bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800">
+        <div>
+          <span class="text-zinc-500">FAV:</span>
+          <span id="pinned-driver" class="font-bold text-amber-400 ml-1">Tap ⭐ in Standings</span>
+        </div>
+        <span class="text-zinc-700">|</span>
+        <button id="tz-toggle" class="text-red-400 hover:text-red-300 font-semibold transition">
+          🕒 Local Time
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-8">
+    <!-- Next Race Hero & Countdown -->
+    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-red-950/40 border border-zinc-800 p-6 md:p-8">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <span id="race-round" class="text-xs font-bold uppercase tracking-widest text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+            Loading Season...
+          </span>
+          <h2 id="race-name" class="font-display text-2xl md:text-4xl font-black mt-3">
+            Fetching Next Grand Prix...
+          </h2>
+          <p id="race-circuit" class="text-zinc-400 text-sm md:text-base mt-1">
+            Connecting to Jolpica F1 Telemetry API...
+          </p>
+        </div>
+
+        <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-4 w-full md:w-auto text-center">
+          <p class="text-xs uppercase tracking-widest text-zinc-400 mb-2">Lights Out Countdown</p>
+          <div id="countdown" class="font-display text-2xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
+            <div><span id="cd-days">00</span><span class="block text-[10px] text-zinc-500">DAYS</span></div>
+            <span>:</span>
+            <div><span id="cd-hours">00</span><span class="block text-[10px] text-zinc-500">HRS</span></div>
+            <span>:</span>
+            <div><span id="cd-mins">00</span><span class="block text-[10px] text-zinc-500">MINS</span></div>
+            <span>:</span>
+            <div><span id="cd-secs" class="text-red-500">00</span><span class="block text-[10px] text-zinc-500">SECS</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-2 border-b border-zinc-800 pb-2 overflow-x-auto">
+      <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab">📅 Weekend Timetable</button>
+      <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn">🏆 Standings</button>
+      <button onclick="switchTab('trivia')" id="tab-trivia" class="tab-btn">📈 Telemetry Quiz</button>
+    </div>
+
+    <!-- TAB 1: Weekend Schedule -->
+    <section id="view-schedule" class="grid md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-display font-bold text-lg">Session Timetable</h3>
+          <button id="whatsapp-share" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
+            📲 Copy for WhatsApp
+          </button>
+        </div>
+        <div id="session-list" class="space-y-3"></div>
+      </div>
+
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <h3 class="font-display font-bold text-lg mb-3">Season Calendar</h3>
+        <select id="race-selector" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-red-500"></select>
+        <p class="text-xs text-zinc-400 mt-4 leading-relaxed">
+          Select any Grand Prix from the current season to inspect session times in your local timezone or share on WhatsApp.
+        </p>
+      </div>
+    </section>
+
+    <!-- TAB 2: Standings -->
+    <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <h3 class="font-display font-bold text-lg mb-4">Drivers' Championship (Top 10)</h3>
+        <div id="wdc-list" class="space-y-2 text-sm"></div>
+      </div>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+        <h3 class="font-display font-bold text-lg mb-4">Constructors' Championship</h3>
+        <div id="wcc-list" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Telemetry Trivia -->
+    <section id="view-trivia" class="hidden bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl mx-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-display font-bold text-lg">Guess the Circuit by Telemetry</h3>
+        <span id="quiz-score" class="text-xs bg-zinc-800 px-3 py-1 rounded-full font-bold text-amber-400">Score: 0</span>
+      </div>
+      <div id="quiz-clues" class="grid grid-cols-3 gap-3 bg-zinc-950 p-4 rounded-xl border border-zinc-800 mb-5 text-center"></div>
+      <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+      <p id="quiz-feedback" class="text-center font-bold text-sm mt-4 min-h-[20px]"></p>
+      <button onclick="loadNextQuestion()" class="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold py-2.5 rounded-lg transition">
+        Next Telemetry Trace →
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
+    let seasonRaces = [];
+    let selectedRace = null;
+    let useUTC = false;
+    let countdownTimer = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPinnedDriver();
+      fetchSeasonData();
+      fetchStandings();
+      loadNextQuestion();
+
+      document.getElementById("tz-toggle").addEventListener("click", () => {
+        useUTC = !useUTC;
+        document.getElementById("tz-toggle").textContent = useUTC ? "🌍 UTC Time" : "🕒 Local Time";
+        if (selectedRace) renderRaceDetails(selectedRace);
+      });
+
+      document.getElementById("race-selector").addEventListener("change", (e) => {
+        const round = e.target.value;
+        selectedRace = seasonRaces.find(r => r.round === round);
+        if (selectedRace) renderRaceDetails(selectedRace);
+      });
+
+      document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
+    });
+
+    async function fetchSeasonData() {
+      try {
+        const res = await fetch(`${API_BASE}.json`);
+        const data = await res.json();
+        seasonRaces = data.MRData.RaceTable.Races;
+        const now = new Date();
+        selectedRace = seasonRaces.find(r => new Date(`${r.date}T${r.time || '14:00:00Z'}`) > now) || seasonRaces[seasonRaces.length - 1];
+        populateSelector();
+        renderRaceDetails(selectedRace);
+      } catch (err) {
+        document.getElementById("race-name").textContent = "Offline / API Error";
+      }
+    }
+
+    function populateSelector() {
+      const select = document.getElementById("race-selector");
+      select.innerHTML = seasonRaces.map(r =>
+        `<option value="${r.round}" ${r.round === selectedRace.round ? "selected" : ""}>R${r.round}: ${r.raceName}</option>`
+      ).join("");
+    }
+
+    function renderRaceDetails(race) {
+      document.getElementById("race-round").textContent = `ROUND ${race.round} • ${race.season}`;
+      document.getElementById("race-name").textContent = race.raceName;
+      document.getElementById("race-circuit").textContent = `${race.Circuit.circuitName} — ${race.Circuit.Location.locality}, ${race.Circuit.Location.country}`;
+
+      const sessions = [];
+      if (race.FirstPractice) sessions.push({ name: "Free Practice 1", ...race.FirstPractice });
+      if (race.SecondPractice) sessions.push({ name: "Free Practice 2", ...race.SecondPractice });
+      if (race.SprintQualifying) sessions.push({ name: "Sprint Qualifying", ...race.SprintQualifying });
+      if (race.ThirdPractice) sessions.push({ name: "Free Practice 3", ...race.ThirdPractice });
+      if (race.Sprint) sessions.push({ name: "Sprint Race", ...race.Sprint });
+      if (race.Qualifying) sessions.push({ name: "Qualifying", ...race.Qualifying });
+      sessions.push({ name: "Grand Prix", date: race.date, time: race.time || "14:00:00Z", isRace: true });
+
+      document.getElementById("session-list").innerHTML = sessions.map(s => {
+        const dt = new Date(`${s.date}T${s.time}`);
+        return `
+          <div class="flex justify-between items-center p-3 rounded-lg border ${s.isRace ? 'bg-red-950/20 border-red-600/40' : 'bg-zinc-950 border-zinc-800'}">
+            <span class="font-bold ${s.isRace ? 'text-red-400' : 'text-zinc-200'}">${s.name}</span>
+            <span class="text-xs md:text-sm font-mono text-zinc-300">${formatTime(dt)}</span>
+          </div>
+        `;
+      }).join("");
+
+      startCountdown(new Date(`${race.date}T${race.time || '14:00:00Z'}`));
+    }
+
+    function formatTime(dateObj) {
+      if (useUTC) return dateObj.toUTCString().replace(":00 GMT", " UTC");
+      return dateObj.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function startCountdown(targetDate) {
+      if (countdownTimer) clearInterval(countdownTimer);
+      const update = () => {
+        const diff = targetDate - new Date();
+        if (diff <= 0) return;
+        document.getElementById("cd-days").textContent = String(Math.floor(diff / 86400000)).padStart(2, '0');
+        document.getElementById("cd-hours").textContent = String(Math.floor((diff / 3600000) % 24)).padStart(2, '0');
+        document.getElementById("cd-mins").textContent = String(Math.floor((diff / 60000) % 60)).padStart(2, '0');
+        document.getElementById("cd-secs").textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+      };
+      update();
+      countdownTimer = setInterval(update, 1000);
+    }
+
+    function copyScheduleForWhatsApp() {
+      if (!selectedRace) return;
+      const rows = Array.from(document.querySelectorAll("#session-list > div")).map(row => {
+        const spans = row.querySelectorAll("span");
+        return `• *${spans[0].textContent}*: ${spans[1].textContent}`;
+      });
+      const text = `🏎️ *${selectedRace.raceName} Schedule*\n📍 ${selectedRace.Circuit.circuitName}\n\n${rows.join("\n")}`;
+      navigator.clipboard.writeText(text);
+      const btn = document.getElementById("whatsapp-share");
+      btn.textContent = "✅ Copied!";
+      setTimeout(() => btn.textContent = "📲 Copy for WhatsApp", 2000);
+    }
+
+    async function fetchStandings() {
+      try {
+        const [wdcRes, wccRes] = await Promise.all([
+          fetch(`${API_BASE}/driverStandings.json`),
+          fetch(`${API_BASE}/constructorStandings.json`)
+        ]);
+        const wdc = (await wdcRes.json()).MRData.StandingsTable.StandingsLists[0].DriverStandings.slice(0, 10);
+        const wcc = (await wccRes.json()).MRData.StandingsTable.StandingsLists[0].ConstructorStandings;
+
+        document.getElementById("wdc-list").innerHTML = wdc.map(d => `
+          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded border border-zinc-800">
+            <div>
+              <span class="font-bold text-zinc-500 w-6 inline-block">P${d.position}</span>
+              <span class="font-bold">${d.Driver.givenName} ${d.Driver.familyName}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-mono font-bold text-red-400">${d.points} PTS</span>
+              <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position})')" class="hover:scale-125 transition">⭐</button>
+            </div>
+          </div>
+        `).join("");
+
+        document.getElementById("wcc-list").innerHTML = wcc.map(c => `
+          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded border border-zinc-800">
+            <div>
+              <span class="font-bold text-zinc-500 w-6 inline-block">P${c.position}</span>
+              <span class="font-bold">${c.Constructor.name}</span>
+            </div>
+            <span class="font-mono font-bold text-amber-400">${c.points} PTS</span>
+          </div>
+        `).join("");
+      } catch (e) {}
+    }
+
+    function pinDriver(info) {
+      localStorage.setItem("f1_pinned_driver", info);
+      loadPinnedDriver();
+    }
+
+    function loadPinnedDriver() {
+      const saved = localStorage.getItem("f1_pinned_driver");
+      if (saved) document.getElementById("pinned-driver").textContent = saved;
+    }
+
+    const TRIVIA_BANK = [
+      { answer: "Monza", speed: "356 km/h", throttle: "82% Throttle", gforce: "3.2G Parabolica", options: ["Monza", "Silverstone", "Spa-Francorchamps", "Monaco"] },
+      { answer: "Monaco", speed: "290 km/h", throttle: "44% Throttle", gforce: "Hairpin 48 km/h", options: ["Hungaroring", "Monaco", "Singapore", "Zandvoort"] },
+      { answer: "Suzuka", speed: "331 km/h", throttle: "70% Throttle", gforce: "5.2G Figure-8 Esses", options: ["Suzuka", "COTA", "Interlagos", "Red Bull Ring"] }
+    ];
+    let quizIndex = 0, score = 0;
+
+    function loadNextQuestion() {
+      const q = TRIVIA_BANK[quizIndex++ % TRIVIA_BANK.length];
+      document.getElementById("quiz-feedback").textContent = "";
+      document.getElementById("quiz-clues").innerHTML = `
+        <div><span class="block text-[10px] text-zinc-500">TOP SPEED</span><span class="font-display font-bold text-red-400 text-xs">${q.speed}</span></div>
+        <div><span class="block text-[10px] text-zinc-500">FULL THROTTLE</span><span class="font-display font-bold text-emerald-400 text-xs">${q.throttle}</span></div>
+        <div><span class="block text-[10px] text-zinc-500">KEY SECTOR</span><span class="font-bold text-xs text-zinc-200">${q.gforce}</span></div>
+      `;
+      document.getElementById("quiz-options").innerHTML = q.options.map(opt => `
+        <button onclick="checkTrivia('${opt}', '${q.answer}')" class="bg-zinc-950 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-sm font-semibold transition text-left">
+          🏁 ${opt}
+        </button>
+      `).join("");
+    }
+
+    function checkTrivia(selected, correct) {
+      const fb = document.getElementById("quiz-feedback");
+      if (selected === correct) {
+        score++;
+        fb.textContent = "✅ Box, Box! Correct telemetry match.";
+        fb.className = "text-center font-bold text-sm mt-4 text-emerald-400";
+      } else {
+        fb.textContent = `❌ Negative. That trace belongs to ${correct}.`;
+        fb.className = "text-center font-bold text-sm mt-4 text-red-500";
+      }
+      document.getElementById("quiz-score").textContent = `Score: ${score}`;
+    }
+
+    function switchTab(tab) {
+      ["schedule", "standings", "trivia"].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
+        document.getElementById(`tab-${t}`).classList.toggle("active-tab", t === tab);
+      });
+    }
+  </script>
+</body>
+</html>
