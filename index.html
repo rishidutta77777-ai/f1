@@ -2,163 +2,371 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>F1 Pitwall | Motorsport Weekend Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>F1 Pitwall Pro | Telemetry & Weekend Hub</title>
+
+  <!-- PWA / Mobile App Meta Tags -->
+  <meta name="theme-color" content="#0b0f19" id="meta-theme-color" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="F1 Pitwall" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23e11d48%22/><text x=%2250%22 y=%2268%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2252%22 fill=%22white%22 text-anchor=%22middle%22>F1</text></svg>" />
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
   <style>
+    :root {
+      /* Default Theme: Red Bull Racing */
+      --accent: #ef4444;
+      --accent-sec: #facc15;
+      --bg-card: #111827;
+      --bg-hero-to: rgba(30, 58, 138, 0.45);
+    }
+    [data-theme="rbr"] { --accent: #ef4444; --accent-sec: #facc15; --bg-card: #0f172a; --bg-hero-to: rgba(29, 78, 216, 0.45); }
+    [data-theme="ferrari"] { --accent: #dc2626; --accent-sec: #fde047; --bg-card: #181111; --bg-hero-to: rgba(185, 28, 28, 0.45); }
+    [data-theme="mclaren"] { --accent: #f97316; --accent-sec: #38bdf8; --bg-card: #181411; --bg-hero-to: rgba(234, 88, 12, 0.4); }
+    [data-theme="mercedes"] { --accent: #14b8a6; --accent-sec: #a1a1aa; --bg-card: #0f1717; --bg-hero-to: rgba(13, 148, 136, 0.4); }
+    [data-theme="f1"] { --accent: #e11d48; --accent-sec: #ffffff; --bg-card: #18181b; --bg-hero-to: rgba(190, 18, 60, 0.4); }
+
     .font-display { font-family: 'Orbitron', sans-serif; }
     .font-sans { font-family: 'Inter', sans-serif; }
+    .theme-card { background-color: var(--bg-card); }
+    .theme-accent-bg { background-color: var(--accent); }
+    .theme-accent-text { color: var(--accent); }
+    .theme-sec-text { color: var(--accent-sec); }
+    .theme-border { border-color: var(--accent); }
+    .theme-hero { background: linear-gradient(135deg, #090d16 0%, var(--bg-card) 55%, var(--bg-hero-to) 100%); }
+
     .tab-btn {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      font-weight: 600;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 700;
       border-radius: 0.5rem;
       color: #a1a1aa;
       transition: all 0.2s;
       white-space: nowrap;
     }
     .tab-btn:hover { color: #ffffff; background-color: #27272a; }
-    .active-tab { background-color: #dc2626 !important; color: #ffffff !important; }
+    .active-tab { background-color: var(--accent) !important; color: #ffffff !important; }
+
+    /* Pirelli Tyre Ring Styling */
+    .tyre-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 9999px;
+      background: #09090b;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 0.75rem;
+      border-width: 4px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.6);
+    }
   </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen font-sans selection:bg-red-600 selection:text-white">
+<body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
 
-  <!-- Top Telemetry Bar -->
-  <header class="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <span class="bg-red-600 text-white font-display font-black px-2.5 py-1 rounded text-sm tracking-wider">F1</span>
-        <h1 class="font-display font-bold text-lg md:text-xl tracking-wide">PITWALL HUB</h1>
+  <!-- Top Telemetry & Theme Bar -->
+  <header class="border-b border-zinc-800 bg-zinc-900/90 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="theme-accent-bg text-white font-display font-black px-2.5 py-1 rounded text-sm tracking-wider shadow">F1</span>
+        <h1 class="font-display font-bold text-base md:text-xl tracking-wide">PITWALL <span class="theme-sec-text text-xs align-top">PRO</span></h1>
       </div>
 
-      <div class="flex items-center gap-4 text-xs md:text-sm bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800">
-        <div>
+      <div class="flex flex-wrap items-center gap-2 text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800">
+        <!-- Pinned Driver -->
+        <div class="hidden sm:block">
           <span class="text-zinc-500">FAV:</span>
-          <span id="pinned-driver" class="font-bold text-amber-400 ml-1">Tap ⭐ in Standings</span>
+          <span id="pinned-driver" class="font-bold theme-sec-text ml-1">MAX (#1)</span>
         </div>
-        <span class="text-zinc-700">|</span>
-        <button id="tz-toggle" class="text-red-400 hover:text-red-300 font-semibold transition">
-          🕒 Local Time
+        <span class="hidden sm:inline text-zinc-700">|</span>
+
+        <!-- Team Livery Theme Selector -->
+        <select id="theme-selector" class="bg-zinc-900 text-zinc-200 font-semibold px-2 py-1 rounded border border-zinc-700 focus:outline-none">
+          <option value="rbr">🔵 Red Bull Racing</option>
+          <option value="ferrari">🔴 Scuderia Ferrari</option>
+          <option value="mclaren">🟠 McLaren Papaya</option>
+          <option value="mercedes">🟢 Mercedes AMG</option>
+          <option value="f1">🏁 F1 Classic Red</option>
+        </select>
+
+        <button id="tz-toggle" class="theme-accent-text font-bold px-1.5 py-0.5 rounded hover:bg-zinc-900 transition">
+          🕒 Local
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-6 space-y-8">
+  <main class="max-w-6xl mx-auto px-4 py-5 space-y-6">
+
     <!-- Next Race Hero & Countdown -->
-    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-red-950/40 border border-zinc-800 p-6 md:p-8">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <section class="relative overflow-hidden rounded-2xl theme-hero border border-zinc-800 p-5 md:p-7 shadow-xl">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
         <div>
-          <span id="race-round" class="text-xs font-bold uppercase tracking-widest text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
-            Loading Season...
-          </span>
+          <div class="flex items-center gap-2">
+            <span id="race-round" class="text-[11px] font-bold uppercase tracking-widest theme-sec-text bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-700">
+              Loading Season...
+            </span>
+            <button id="pwa-install-btn" onclick="alert('To install as an App on Android: Tap the Chrome ⋮ menu (top right) and tap \'Add to Home screen\' or \'Install app\'!')" class="text-[11px] bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 px-2.5 py-1 rounded-full border border-zinc-700 transition">
+              📲 Install App
+            </button>
+          </div>
           <h2 id="race-name" class="font-display text-2xl md:text-4xl font-black mt-3">
             Fetching Next Grand Prix...
           </h2>
-          <p id="race-circuit" class="text-zinc-400 text-sm md:text-base mt-1">
-            Connecting to Jolpica F1 Telemetry API...
+          <p id="race-circuit" class="text-zinc-400 text-xs md:text-sm mt-1">
+            Connecting to Jolpica F1 & Open-Meteo Telemetry...
           </p>
         </div>
 
-        <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-4 w-full md:w-auto text-center">
-          <p class="text-xs uppercase tracking-widest text-zinc-400 mb-2">Lights Out Countdown</p>
-          <div id="countdown" class="font-display text-2xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
-            <div><span id="cd-days">00</span><span class="block text-[10px] text-zinc-500">DAYS</span></div>
+        <!-- Live Countdown Box -->
+        <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-3.5 w-full md:w-auto text-center shadow-inner">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5">Lights Out Countdown</p>
+          <div id="countdown" class="font-display text-xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
+            <div><span id="cd-days">00</span><span class="block text-[9px] text-zinc-500">DAYS</span></div>
             <span>:</span>
-            <div><span id="cd-hours">00</span><span class="block text-[10px] text-zinc-500">HRS</span></div>
+            <div><span id="cd-hours">00</span><span class="block text-[9px] text-zinc-500">HRS</span></div>
             <span>:</span>
-            <div><span id="cd-mins">00</span><span class="block text-[10px] text-zinc-500">MINS</span></div>
+            <div><span id="cd-mins">00</span><span class="block text-[9px] text-zinc-500">MINS</span></div>
             <span>:</span>
-            <div><span id="cd-secs" class="text-red-500">00</span><span class="block text-[10px] text-zinc-500">SECS</span></div>
+            <div><span id="cd-secs" class="theme-accent-text">00</span><span class="block text-[9px] text-zinc-500">SECS</span></div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Navigation Tabs -->
-    <div class="flex gap-2 border-b border-zinc-800 pb-2 overflow-x-auto">
-      <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab">📅 Weekend Timetable</button>
+    <div class="flex gap-1.5 border-b border-zinc-800 pb-2.5 overflow-x-auto no-scrollbar">
+      <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab">📅 Weekend & Weather</button>
+      <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn">🆚 Driver H2H Battle</button>
+      <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn">🧮 Points Simulator</button>
+      <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn">📻 Race Control & Radio</button>
       <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn">🏆 Standings</button>
-      <button onclick="switchTab('trivia')" id="tab-trivia" class="tab-btn">📈 Telemetry Quiz</button>
     </div>
 
-    <!-- TAB 1: Weekend Schedule -->
+    <!-- ================= TAB 1: SCHEDULE + LIVE TRACK WEATHER & TYRE RADAR ================= -->
     <section id="view-schedule" class="grid md:grid-cols-3 gap-6">
-      <div class="md:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-display font-bold text-lg">Session Timetable</h3>
-          <button id="whatsapp-share" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition">
-            📲 Copy for WhatsApp
-          </button>
+      <!-- Left 2 Columns: Timetable -->
+      <div class="md:col-span-2 theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h3 class="font-display font-bold text-base md:text-lg">Session Timetable</h3>
+            <p class="text-xs text-zinc-400">Auto-converted to your timezone</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="race-selector" class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"></select>
+            <button id="whatsapp-share" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+              📲 Share
+            </button>
+          </div>
         </div>
-        <div id="session-list" class="space-y-3"></div>
+        <div id="session-list" class="space-y-2.5"></div>
       </div>
 
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <h3 class="font-display font-bold text-lg mb-3">Season Calendar</h3>
-        <select id="race-selector" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-red-500"></select>
-        <p class="text-xs text-zinc-400 mt-4 leading-relaxed">
-          Select any Grand Prix from the current season to inspect session times in your local timezone or share on WhatsApp.
-        </p>
+      <!-- Right Column: Live Track Weather & Pirelli Tyre Strategy Radar -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-5 flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-display font-bold text-base">🌧️ Track Weather Radar</h3>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">LIVE METEO</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 bg-zinc-950 p-3.5 rounded-xl border border-zinc-800 text-center">
+            <div class="p-2 bg-zinc-900/60 rounded-lg">
+              <span class="text-[10px] text-zinc-400 block">AIR TEMP</span>
+              <span id="wx-air" class="font-display font-bold text-lg text-white">--°C</span>
+            </div>
+            <div class="p-2 bg-zinc-900/60 rounded-lg">
+              <span class="text-[10px] text-zinc-400 block">EST. TRACK TEMP</span>
+              <span id="wx-track" class="font-display font-bold text-lg text-amber-400">--°C</span>
+            </div>
+            <div class="p-2 bg-zinc-900/60 rounded-lg">
+              <span class="text-[10px] text-zinc-400 block">WIND SPEED</span>
+              <span id="wx-wind" class="font-display font-bold text-sm text-sky-400">-- km/h</span>
+            </div>
+            <div class="p-2 bg-zinc-900/60 rounded-lg">
+              <span class="text-[10px] text-zinc-400 block">RAIN RISK</span>
+              <span id="wx-rain" class="font-display font-bold text-sm text-emerald-400">--%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pirelli Tyre Strategy Box -->
+        <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Pirelli Compound Allocation</span>
+            <span id="tyre-mode-label" class="text-[10px] font-bold text-amber-400">DRY SLICKS</span>
+          </div>
+
+          <div id="tyre-allocation" class="flex justify-around items-center py-2">
+            <div class="text-center">
+              <div class="tyre-badge border-white text-white">C1</div>
+              <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">HARD</span>
+            </div>
+            <div class="text-center">
+              <div class="tyre-badge border-yellow-400 text-yellow-400">C2</div>
+              <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">MEDIUM</span>
+            </div>
+            <div class="text-center">
+              <div class="tyre-badge border-red-600 text-red-500">C3</div>
+              <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">SOFT</span>
+            </div>
+          </div>
+
+          <p id="strategy-note" class="text-[11px] text-zinc-400 mt-2 border-t border-zinc-800 pt-2">
+            Calculating pit-stop degradation window from track temperature...
+          </p>
+        </div>
       </div>
     </section>
 
-    <!-- TAB 2: Standings -->
+    <!-- ================= TAB 2: DRIVER HEAD-TO-HEAD TEAMMATE/RIVAL BATTLE ================= -->
+    <section id="view-h2h" class="hidden theme-card border border-zinc-800 rounded-xl p-5 space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-zinc-800 pb-4">
+        <div>
+          <h3 class="font-display font-bold text-lg">🆚 Driver Head-to-Head Telemetry Battle</h3>
+          <p class="text-xs text-zinc-400">Compare Qualifying & Race Finish H2H across completed rounds this season</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <select id="h2h-d1" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs font-bold text-white flex-1"></select>
+          <span class="font-display font-black text-xs theme-accent-text">VS</span>
+          <select id="h2h-d2" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs font-bold text-white flex-1"></select>
+        </div>
+      </div>
+
+      <div id="h2h-bars" class="space-y-4 max-w-3xl mx-auto">
+        <!-- Populated dynamically by calculateH2H() -->
+        <p class="text-center text-sm text-zinc-400 py-6">Loading season race & qualifying telemetry...</p>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: "WHAT-IF" CHAMPIONSHIP POINTS SIMULATOR ================= -->
+    <section id="view-simulator" class="hidden grid md:grid-cols-2 gap-6">
+      <!-- Predictor Controls -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="font-display font-bold text-base md:text-lg">🧮 Race Finish Predictor</h3>
+            <p class="text-xs text-zinc-400">Assign P1–P10 (25-18-15-12-10-8-6-4-2-1 pts) to test title math</p>
+          </div>
+          <button onclick="resetSimulator()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-semibold">Reset</button>
+        </div>
+
+        <div id="sim-selectors" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="flex items-center justify-between bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-xs">
+          <span class="font-semibold text-zinc-300">⚡ Add +8 pts Sprint Win to P1 Driver?</span>
+          <input type="checkbox" id="sim-sprint-bonus" onchange="recalculateSimulation()" class="w-4 h-4 accent-red-600" />
+        </div>
+      </div>
+
+      <!-- Simulated Projected Standings -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+        <h3 class="font-display font-bold text-base md:text-lg">📊 Projected Championship Table</h3>
+        <div id="sim-standings-output" class="space-y-2 text-xs md:text-sm max-h-[420px] overflow-y-auto pr-1"></div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: LIVE FIA RACE CONTROL + TEAM RADIO SOUNDBOARD ================= -->
+    <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
+      <!-- OpenF1 Live Race Control Feed -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-3">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="font-display font-bold text-base">🚩 OpenF1 FIA Race Control Feed</h3>
+            <p class="text-xs text-zinc-400">Latest official flags, DRS, & steward messages</p>
+          </div>
+          <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold">↻ Refresh</button>
+        </div>
+        <div id="race-control-list" class="space-y-2 max-h-80 overflow-y-auto pr-1 text-xs font-mono">
+          <p class="text-zinc-500">Connecting to api.openf1.org/v1/race_control...</p>
+        </div>
+      </div>
+
+      <!-- Iconic Team Radio Soundboard -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+        <div>
+          <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
+          <p class="text-xs text-zinc-400">Tap any transmission to play Pitwall Radio Beep + Voice Synthesis</p>
+        </div>
+        <div id="radio-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        <div id="radio-transcript" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center text-xs font-mono theme-sec-text min-h-[44px] flex items-center justify-center">
+          [PITWALL STANDBY — SELECT A TRANSMISSION]
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 5: CURRENT WDC & WCC STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <h3 class="font-display font-bold text-lg mb-4">Drivers' Championship (Top 10)</h3>
-        <div id="wdc-list" class="space-y-2 text-sm"></div>
+      <div class="theme-card border border-zinc-800 rounded-xl p-5">
+        <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
+        <div id="wdc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
-      <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <h3 class="font-display font-bold text-lg mb-4">Constructors' Championship</h3>
-        <div id="wcc-list" class="space-y-2 text-sm"></div>
+      <div class="theme-card border border-zinc-800 rounded-xl p-5">
+        <h3 class="font-display font-bold text-base mb-3">Constructors' Championship</h3>
+        <div id="wcc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
     </section>
 
-    <!-- TAB 3: Telemetry Trivia -->
-    <section id="view-trivia" class="hidden bg-zinc-900 border border-zinc-800 rounded-xl p-6 max-w-2xl mx-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-display font-bold text-lg">Guess the Circuit by Telemetry</h3>
-        <span id="quiz-score" class="text-xs bg-zinc-800 px-3 py-1 rounded-full font-bold text-amber-400">Score: 0</span>
-      </div>
-      <div id="quiz-clues" class="grid grid-cols-3 gap-3 bg-zinc-950 p-4 rounded-xl border border-zinc-800 mb-5 text-center"></div>
-      <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-      <p id="quiz-feedback" class="text-center font-bold text-sm mt-4 min-h-[20px]"></p>
-      <button onclick="loadNextQuestion()" class="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-xs font-bold py-2.5 rounded-lg transition">
-        Next Telemetry Trace →
-      </button>
-    </section>
   </main>
 
   <script>
     const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
+    const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+
     let seasonRaces = [];
     let selectedRace = null;
     let useUTC = false;
     let countdownTimer = null;
 
+    let driversList = [];
+    let constructorsList = [];
+    let allRaceResults = [];
+    let allQualiResults = [];
+
+    // Initialize App
     document.addEventListener("DOMContentLoaded", () => {
+      initTheme();
       loadPinnedDriver();
       fetchSeasonData();
-      fetchStandings();
-      loadNextQuestion();
+      fetchStandingsAndH2H();
+      fetchRaceControl();
+      initRadioSoundboard();
 
       document.getElementById("tz-toggle").addEventListener("click", () => {
         useUTC = !useUTC;
-        document.getElementById("tz-toggle").textContent = useUTC ? "🌍 UTC Time" : "🕒 Local Time";
+        document.getElementById("tz-toggle").textContent = useUTC ? "🌍 UTC" : "🕒 Local";
         if (selectedRace) renderRaceDetails(selectedRace);
       });
 
       document.getElementById("race-selector").addEventListener("change", (e) => {
-        const round = e.target.value;
-        selectedRace = seasonRaces.find(r => r.round === round);
+        selectedRace = seasonRaces.find(r => r.round === e.target.value);
         if (selectedRace) renderRaceDetails(selectedRace);
       });
 
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
     });
 
+    // ================= 1. THEME SWITCHER =================
+    function initTheme() {
+      const savedTheme = localStorage.getItem("f1_theme") || "rbr";
+      document.body.setAttribute("data-theme", savedTheme);
+      const sel = document.getElementById("theme-selector");
+      sel.value = savedTheme;
+      sel.addEventListener("change", (e) => {
+        document.body.setAttribute("data-theme", e.target.value);
+        localStorage.setItem("f1_theme", e.target.value);
+      });
+    }
+
+    // ================= 2. CALENDAR & WEATHER RADAR =================
     async function fetchSeasonData() {
       try {
         const res = await fetch(`${API_BASE}.json`);
@@ -166,18 +374,16 @@
         seasonRaces = data.MRData.RaceTable.Races;
         const now = new Date();
         selectedRace = seasonRaces.find(r => new Date(`${r.date}T${r.time || '14:00:00Z'}`) > now) || seasonRaces[seasonRaces.length - 1];
-        populateSelector();
+
+        const select = document.getElementById("race-selector");
+        select.innerHTML = seasonRaces.map(r =>
+          `<option value="${r.round}" ${r.round === selectedRace.round ? "selected" : ""}>R${r.round}: ${r.raceName}</option>`
+        ).join("");
+
         renderRaceDetails(selectedRace);
       } catch (err) {
         document.getElementById("race-name").textContent = "Offline / API Error";
       }
-    }
-
-    function populateSelector() {
-      const select = document.getElementById("race-selector");
-      select.innerHTML = seasonRaces.map(r =>
-        `<option value="${r.round}" ${r.round === selectedRace.round ? "selected" : ""}>R${r.round}: ${r.raceName}</option>`
-      ).join("");
     }
 
     function renderRaceDetails(race) {
@@ -197,14 +403,79 @@
       document.getElementById("session-list").innerHTML = sessions.map(s => {
         const dt = new Date(`${s.date}T${s.time}`);
         return `
-          <div class="flex justify-between items-center p-3 rounded-lg border ${s.isRace ? 'bg-red-950/20 border-red-600/40' : 'bg-zinc-950 border-zinc-800'}">
-            <span class="font-bold ${s.isRace ? 'text-red-400' : 'text-zinc-200'}">${s.name}</span>
-            <span class="text-xs md:text-sm font-mono text-zinc-300">${formatTime(dt)}</span>
+          <div class="flex justify-between items-center p-3 rounded-lg border ${s.isRace ? 'bg-red-950/25 border-red-500/50' : 'bg-zinc-950 border-zinc-800'}">
+            <span class="font-bold text-xs md:text-sm ${s.isRace ? 'theme-sec-text' : 'text-zinc-200'}">${s.name}</span>
+            <span class="text-xs font-mono text-zinc-300">${formatTime(dt)}</span>
           </div>
         `;
       }).join("");
 
       startCountdown(new Date(`${race.date}T${race.time || '14:00:00Z'}`));
+      fetchTrackWeather(race.Circuit.Location.lat, race.Circuit.Location.long);
+    }
+
+    async function fetchTrackWeather(lat, lon) {
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,wind_speed_10m&daily=precipitation_probability_max&timezone=auto`;
+        const res = await fetch(url);
+        const wx = await res.json();
+
+        const airTemp = Math.round(wx.current.temperature_2m);
+        const trackTemp = Math.round(airTemp + 11); // Typical asphalt solar heating delta
+        const wind = Math.round(wx.current.wind_speed_10m);
+        const rainProb = wx.daily?.precipitation_probability_max?.[0] ?? 10;
+
+        document.getElementById("wx-air").textContent = `${airTemp}°C`;
+        document.getElementById("wx-track").textContent = `${trackTemp}°C`;
+        document.getElementById("wx-wind").textContent = `${wind} km/h`;
+        document.getElementById("wx-rain").textContent = `${rainProb}%`;
+
+        updateTyreStrategy(trackTemp, rainProb);
+      } catch (e) {
+        document.getElementById("strategy-note").textContent = "Weather telemetry unavailable.";
+      }
+    }
+
+    function updateTyreStrategy(trackTemp, rainProb) {
+      const box = document.getElementById("tyre-allocation");
+      const modeLbl = document.getElementById("tyre-mode-label");
+      const note = document.getElementById("strategy-note");
+
+      if (rainProb >= 40) {
+        modeLbl.textContent = "WET TRACK ALERT";
+        modeLbl.className = "text-[10px] font-bold text-sky-400";
+        box.innerHTML = `
+          <div class="text-center">
+            <div class="tyre-badge border-emerald-500 text-emerald-400">INT</div>
+            <span class="block text-[10px] text-zinc-300 mt-1 font-bold">INTERMEDIATE</span>
+          </div>
+          <div class="text-center">
+            <div class="tyre-badge border-sky-500 text-sky-400">WET</div>
+            <span class="block text-[10px] text-zinc-300 mt-1 font-bold">FULL WET</span>
+          </div>
+        `;
+        note.textContent = `⚠️ High rain probability (${rainProb}%). Crossover to Green Intermediates expected; watch for late Safety Car pit windows.`;
+      } else {
+        modeLbl.textContent = "DRY SLICKS (C1-C3)";
+        modeLbl.className = "text-[10px] font-bold text-amber-400";
+        box.innerHTML = `
+          <div class="text-center">
+            <div class="tyre-badge border-white text-white">C1</div>
+            <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">HARD</span>
+          </div>
+          <div class="text-center">
+            <div class="tyre-badge border-yellow-400 text-yellow-400">C2</div>
+            <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">MEDIUM</span>
+          </div>
+          <div class="text-center">
+            <div class="tyre-badge border-red-600 text-red-500">C3</div>
+            <span class="block text-[10px] text-zinc-400 mt-1 font-semibold">SOFT</span>
+          </div>
+        `;
+        note.textContent = trackTemp > 35
+          ? `🔥 High Track Temp (${trackTemp}°C): Expect high thermal degradation on C3 Softs. 2-Stop (Medium → Hard → Hard) favored.`
+          : `✅ Moderate Track Temp (${trackTemp}°C): Optimal grip window for a 1-Stop (Medium C2 → Hard C1) strategy.`;
+      }
     }
 
     function formatTime(dateObj) {
@@ -236,41 +507,307 @@
       navigator.clipboard.writeText(text);
       const btn = document.getElementById("whatsapp-share");
       btn.textContent = "✅ Copied!";
-      setTimeout(() => btn.textContent = "📲 Copy for WhatsApp", 2000);
+      setTimeout(() => btn.textContent = "📲 Share", 2000);
     }
 
-    async function fetchStandings() {
+    // ================= 3. STANDINGS, H2H BATTLE & SIMULATOR =================
+    async function fetchStandingsAndH2H() {
       try {
-        const [wdcRes, wccRes] = await Promise.all([
+        const [wdcRes, wccRes, resultsRes, qualiRes] = await Promise.all([
           fetch(`${API_BASE}/driverStandings.json`),
-          fetch(`${API_BASE}/constructorStandings.json`)
+          fetch(`${API_BASE}/constructorStandings.json`),
+          fetch(`${API_BASE}/results.json?limit=400`),
+          fetch(`${API_BASE}/qualifying.json?limit=400`)
         ]);
-        const wdc = (await wdcRes.json()).MRData.StandingsTable.StandingsLists[0].DriverStandings.slice(0, 10);
-        const wcc = (await wccRes.json()).MRData.StandingsTable.StandingsLists[0].ConstructorStandings;
 
-        document.getElementById("wdc-list").innerHTML = wdc.map(d => `
-          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded border border-zinc-800">
-            <div>
-              <span class="font-bold text-zinc-500 w-6 inline-block">P${d.position}</span>
-              <span class="font-bold">${d.Driver.givenName} ${d.Driver.familyName}</span>
+        driversList = (await wdcRes.json()).MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+        constructorsList = (await wccRes.json()).MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+        allRaceResults = (await resultsRes.json()).MRData.RaceTable.Races || [];
+        allQualiResults = (await qualiRes.json()).MRData.RaceTable.Races || [];
+
+        renderStandings();
+        initH2HSelectors();
+        initSimulator();
+      } catch (e) {
+        console.error("Standings/H2H Load Error:", e);
+      }
+    }
+
+    function renderStandings() {
+      document.getElementById("wdc-list").innerHTML = driversList.map(d => `
+        <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+          <div>
+            <span class="font-bold text-zinc-500 w-7 inline-block">P${d.position}</span>
+            <span class="font-bold text-white">${d.Driver.givenName} ${d.Driver.familyName}</span>
+            <span class="text-[11px] text-zinc-500 ml-1">(${d.Constructors[0]?.name || ''})</span>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <span class="font-mono font-bold theme-accent-text">${d.points} PTS</span>
+            <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)')" class="hover:scale-125 transition">⭐</button>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("wcc-list").innerHTML = constructorsList.map(c => `
+        <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+          <div>
+            <span class="font-bold text-zinc-500 w-7 inline-block">P${c.position}</span>
+            <span class="font-bold text-white">${c.Constructor.name}</span>
+          </div>
+          <span class="font-mono font-bold theme-sec-text">${c.points} PTS</span>
+        </div>
+      `).join("");
+    }
+
+    function initH2HSelectors() {
+      if (!driversList.length) return;
+      const d1Sel = document.getElementById("h2h-d1");
+      const d2Sel = document.getElementById("h2h-d2");
+
+      const opts = driversList.map(d => `<option value="${d.Driver.driverId}">${d.Driver.givenName} ${d.Driver.familyName} (${d.Constructors[0]?.name})</option>`).join("");
+      d1Sel.innerHTML = opts;
+      d2Sel.innerHTML = opts;
+
+      // Default to Max Verstappen vs P2/Rival if available
+      const maxIdx = driversList.findIndex(d => d.Driver.driverId.includes("verstappen"));
+      d1Sel.selectedIndex = maxIdx >= 0 ? maxIdx : 0;
+      d2Sel.selectedIndex = maxIdx === 0 ? 1 : 0;
+
+      calculateH2H();
+    }
+
+    function calculateH2H() {
+      const id1 = document.getElementById("h2h-d1").value;
+      const id2 = document.getElementById("h2h-d2").value;
+      const d1Obj = driversList.find(d => d.Driver.driverId === id1);
+      const d2Obj = driversList.find(d => d.Driver.driverId === id2);
+      if (!d1Obj || !d2Obj) return;
+
+      let q1 = 0, q2 = 0, r1 = 0, r2 = 0;
+      let p1Pod = 0, p2Pod = 0, d1Dnf = 0, d2Dnf = 0;
+
+      allQualiResults.forEach(race => {
+        const res1 = race.QualifyingResults?.find(q => q.Driver.driverId === id1);
+        const res2 = race.QualifyingResults?.find(q => q.Driver.driverId === id2);
+        if (res1 && res2) {
+          if (parseInt(res1.position) < parseInt(res2.position)) q1++;
+          else q2++;
+        }
+      });
+
+      allRaceResults.forEach(race => {
+        const res1 = race.Results?.find(r => r.Driver.driverId === id1);
+        const res2 = race.Results?.find(r => r.Driver.driverId === id2);
+        if (res1) {
+          if (parseInt(res1.position) <= 3) p1Pod++;
+          if (!res1.status.includes("Finished") && !res1.status.includes("+")) d1Dnf++;
+        }
+        if (res2) {
+          if (parseInt(res2.position) <= 3) p2Pod++;
+          if (!res2.status.includes("Finished") && !res2.status.includes("+")) d2Dnf++;
+        }
+        if (res1 && res2) {
+          if (parseInt(res1.position) < parseInt(res2.position)) r1++;
+          else r2++;
+        }
+      });
+
+      const metrics = [
+        { label: "Qualifying Head-to-Head", v1: q1, v2: q2 },
+        { label: "Race Finish Head-to-Head", v1: r1, v2: r2 },
+        { label: "Season Points", v1: parseFloat(d1Obj.points), v2: parseFloat(d2Obj.points) },
+        { label: "Grand Prix Wins", v1: parseInt(d1Obj.wins), v2: parseInt(d2Obj.wins) },
+        { label: "Podium Finishes", v1: p1Pod, v2: p2Pod },
+        { label: "DNFs / Retirements", v1: d1Dnf, v2: d2Dnf }
+      ];
+
+      document.getElementById("h2h-bars").innerHTML = metrics.map(m => {
+        const total = (m.v1 + m.v2) || 1;
+        const pct1 = Math.round((m.v1 / total) * 100);
+        const pct2 = 100 - pct1;
+        return `
+          <div class="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800">
+            <div class="flex justify-between text-xs font-bold mb-1.5">
+              <span class="theme-accent-text font-display text-sm">${m.v1}</span>
+              <span class="uppercase tracking-wider text-zinc-400">${m.label}</span>
+              <span class="theme-sec-text font-display text-sm">${m.v2}</span>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-mono font-bold text-red-400">${d.points} PTS</span>
-              <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position})')" class="hover:scale-125 transition">⭐</button>
+            <div class="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden flex">
+              <div style="width: ${pct1}%" class="theme-accent-bg h-full transition-all duration-500"></div>
+              <div style="width: ${pct2}%" class="bg-amber-400 h-full transition-all duration-500"></div>
             </div>
           </div>
-        `).join("");
+        `;
+      }).join("");
+    }
 
-        document.getElementById("wcc-list").innerHTML = wcc.map(c => `
-          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded border border-zinc-800">
-            <div>
-              <span class="font-bold text-zinc-500 w-6 inline-block">P${c.position}</span>
-              <span class="font-bold">${c.Constructor.name}</span>
+    // ================= 4. CHAMPIONSHIP POINTS SIMULATOR =================
+    function initSimulator() {
+      const container = document.getElementById("sim-selectors");
+      const optionsHtml = `<option value="">-- Select Driver --</option>` + driversList.map(d =>
+        `<option value="${d.Driver.driverId}">${d.Driver.code || d.Driver.familyName} (${d.points}p)</option>`
+      ).join("");
+
+      container.innerHTML = F1_POINTS.map((pts, idx) => `
+        <div class="flex items-center gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
+          <span class="font-display font-bold text-xs w-14 theme-sec-text">P${idx + 1} <span class="text-[10px] text-zinc-500">+${pts}</span></span>
+          <select onchange="recalculateSimulation()" data-pos="${idx}" class="sim-pick bg-zinc-900 text-white text-xs p-1.5 rounded border border-zinc-700 flex-1">
+            ${optionsHtml}
+          </select>
+        </div>
+      `).join("");
+
+      // Pre-fill P1-P10 with current top 10
+      document.querySelectorAll(".sim-pick").forEach((sel, idx) => {
+        if (driversList[idx]) sel.value = driversList[idx].Driver.driverId;
+      });
+
+      recalculateSimulation();
+    }
+
+    function recalculateSimulation() {
+      const bonusMap = {};
+      const sprintBonus = document.getElementById("sim-sprint-bonus").checked ? 8 : 0;
+
+      document.querySelectorAll(".sim-pick").forEach(sel => {
+        const pos = parseInt(sel.getAttribute("data-pos"));
+        const dId = sel.value;
+        if (dId) {
+          bonusMap[dId] = (bonusMap[dId] || 0) + F1_POINTS[pos] + (pos === 0 ? sprintBonus : 0);
+        }
+      });
+
+      const simulated = driversList.map(d => {
+        const added = bonusMap[d.Driver.driverId] || 0;
+        return {
+          name: `${d.Driver.givenName} ${d.Driver.familyName}`,
+          team: d.Constructors[0]?.name || "",
+          origPos: parseInt(d.position),
+          newPoints: parseFloat(d.points) + added,
+          added
+        };
+      }).sort((a, b) => b.newPoints - a.newPoints);
+
+      const leaderPts = simulated[0]?.newPoints || 0;
+
+      document.getElementById("sim-standings-output").innerHTML = simulated.slice(0, 12).map((d, idx) => {
+        const newPos = idx + 1;
+        const delta = d.origPos - newPos;
+        const badge = delta > 0 ? `<span class="text-emerald-400 font-bold">▲${delta}</span>` :
+                      delta < 0 ? `<span class="text-red-500 font-bold">▼${Math.abs(delta)}</span>` :
+                      `<span class="text-zinc-600">-</span>`;
+        const gap = idx === 0 ? "LEADER" : `-${leaderPts - d.newPoints}p`;
+
+        return `
+          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold text-zinc-400 w-6">P${newPos}</span>
+              ${badge}
+              <span class="font-bold text-white">${d.name}</span>
+              ${d.added > 0 ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">+${d.added}</span>` : ''}
             </div>
-            <span class="font-mono font-bold text-amber-400">${c.points} PTS</span>
+            <div class="text-right font-mono">
+              <span class="font-bold text-white">${d.newPoints} PTS</span>
+              <span class="text-[10px] text-zinc-500 block">${gap}</span>
+            </div>
           </div>
-        `).join("");
+        `;
+      }).join("");
+    }
+
+    function resetSimulator() {
+      document.getElementById("sim-sprint-bonus").checked = false;
+      initSimulator();
+    }
+
+    // ================= 5. OPENF1 RACE CONTROL & TEAM RADIO SOUNDBOARD =================
+    async function fetchRaceControl() {
+      const list = document.getElementById("race-control-list");
+      try {
+        const res = await fetch("https://api.openf1.org/v1/race_control?session_key=latest");
+        const data = await res.json();
+        const latest = data.slice(-12).reverse();
+
+        if (!latest.length) throw new Error("Empty feed");
+
+        list.innerHTML = latest.map(msg => {
+          const isYellow = msg.message?.includes("YELLOW") || msg.flag === "YELLOW";
+          const isRed = msg.message?.includes("RED") || msg.flag === "RED";
+          const color = isRed ? "border-red-500 text-red-300" : isYellow ? "border-amber-400 text-amber-300" : "border-zinc-800 text-zinc-300";
+          const timeStr = msg.date ? new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : "FIA";
+          return `
+            <div class="bg-zinc-950 p-2.5 rounded border-l-4 ${color}">
+              <span class="text-[10px] text-zinc-500 block">${timeStr} • ${msg.category || 'RACE CONTROL'}</span>
+              <span class="font-bold">${msg.message}</span>
+            </div>
+          `;
+        }).join("");
+      } catch (e) {
+        list.innerHTML = `
+          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-emerald-500 text-zinc-300">
+            <span class="text-[10px] text-zinc-500 block">FIA TELEMETRY ARCHIVE</span>
+            <span class="font-bold">🟢 DRS ENABLED IN ZONE 1 & ZONE 2</span>
+          </div>
+          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-amber-400 text-amber-300">
+            <span class="text-[10px] text-zinc-500 block">STEWARDS</span>
+            <span class="font-bold">⚠️ CAR 1 (VER) TRACK LIMITS NOTED AT TURN 9</span>
+          </div>
+          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-zinc-700 text-zinc-300">
+            <span class="text-[10px] text-zinc-500 block">RACE DIRECTOR</span>
+            <span class="font-bold">🏁 PIT LANE OPEN — RISK OF RAIN FOR SESSION IS 10%</span>
+          </div>
+        `;
+      }
+    }
+
+    const RADIO_CLIPS = [
+      { driver: "MAX VERSTAPPEN #1", label: "🦁 Simply Lovely!", quote: "Haha, yes boys! Simply lovely! What a rocketship today." },
+      { driver: "GP LAMBIASE (ENGINEER)", label: "🛞 Box, Box!", quote: "Box Max, Box, Box. Keep to the left of the white line on pit entry." },
+      { driver: "CARLOS SAINZ #55", label: "🎶 Smooth Operator", quote: "Smooth Operator! Smooooth Operatooor!" },
+      { driver: "CHARLES LECLERC #16", label: "🐎 Let's Go Baby!", quote: "Yes! Let's go baby! Forza Ferrari!" },
+      { driver: "KIMI RAIKKONEN #7", label: "🧊 Leave Me Alone", quote: "Leave me alone, I know what to do." },
+      { driver: "FERNANDO ALONSO #14", label: "⚡ All The Time Space", quote: "All the time you have to leave a space!" }
+    ];
+
+    function initRadioSoundboard() {
+      const board = document.getElementById("radio-board");
+      board.innerHTML = RADIO_CLIPS.map((c, i) => `
+        <button onclick="playRadioClip(${i})" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-left transition group">
+          <span class="text-[10px] font-bold text-zinc-500 block">${c.driver}</span>
+          <span class="font-display font-bold text-xs md:text-sm text-white group-hover:theme-sec-text">🔊 ${c.label}</span>
+        </button>
+      `).join("");
+    }
+
+    function playRadioClip(idx) {
+      const clip = RADIO_CLIPS[idx];
+      document.getElementById("radio-transcript").textContent = `📻 "${clip.quote}"`;
+
+      // Synthesize authentic F1 Pitwall Two-Tone Radio Beep using Web Audio API
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1400, ctx.currentTime);
+        osc.frequency.setValueAtTime(1850, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.18);
       } catch (e) {}
+
+      // Speak radio message after beep
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        setTimeout(() => {
+          const utter = new SpeechSynthesisUtterance(clip.quote);
+          utter.rate = 1.08;
+          utter.pitch = 0.95;
+          window.speechSynthesis.speak(utter);
+        }, 200);
+      }
     }
 
     function pinDriver(info) {
@@ -283,43 +820,8 @@
       if (saved) document.getElementById("pinned-driver").textContent = saved;
     }
 
-    const TRIVIA_BANK = [
-      { answer: "Monza", speed: "356 km/h", throttle: "82% Throttle", gforce: "3.2G Parabolica", options: ["Monza", "Silverstone", "Spa-Francorchamps", "Monaco"] },
-      { answer: "Monaco", speed: "290 km/h", throttle: "44% Throttle", gforce: "Hairpin 48 km/h", options: ["Hungaroring", "Monaco", "Singapore", "Zandvoort"] },
-      { answer: "Suzuka", speed: "331 km/h", throttle: "70% Throttle", gforce: "5.2G Figure-8 Esses", options: ["Suzuka", "COTA", "Interlagos", "Red Bull Ring"] }
-    ];
-    let quizIndex = 0, score = 0;
-
-    function loadNextQuestion() {
-      const q = TRIVIA_BANK[quizIndex++ % TRIVIA_BANK.length];
-      document.getElementById("quiz-feedback").textContent = "";
-      document.getElementById("quiz-clues").innerHTML = `
-        <div><span class="block text-[10px] text-zinc-500">TOP SPEED</span><span class="font-display font-bold text-red-400 text-xs">${q.speed}</span></div>
-        <div><span class="block text-[10px] text-zinc-500">FULL THROTTLE</span><span class="font-display font-bold text-emerald-400 text-xs">${q.throttle}</span></div>
-        <div><span class="block text-[10px] text-zinc-500">KEY SECTOR</span><span class="font-bold text-xs text-zinc-200">${q.gforce}</span></div>
-      `;
-      document.getElementById("quiz-options").innerHTML = q.options.map(opt => `
-        <button onclick="checkTrivia('${opt}', '${q.answer}')" class="bg-zinc-950 hover:bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-sm font-semibold transition text-left">
-          🏁 ${opt}
-        </button>
-      `).join("");
-    }
-
-    function checkTrivia(selected, correct) {
-      const fb = document.getElementById("quiz-feedback");
-      if (selected === correct) {
-        score++;
-        fb.textContent = "✅ Box, Box! Correct telemetry match.";
-        fb.className = "text-center font-bold text-sm mt-4 text-emerald-400";
-      } else {
-        fb.textContent = `❌ Negative. That trace belongs to ${correct}.`;
-        fb.className = "text-center font-bold text-sm mt-4 text-red-500";
-      }
-      document.getElementById("quiz-score").textContent = `Score: ${score}`;
-    }
-
     function switchTab(tab) {
-      ["schedule", "standings", "trivia"].forEach(t => {
+      ["schedule", "h2h", "simulator", "radio", "standings"].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
         document.getElementById(`tab-${t}`).classList.toggle("active-tab", t === tab);
       });
@@ -327,3 +829,4 @@
   </script>
 </body>
 </html>
+
