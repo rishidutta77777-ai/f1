@@ -66,6 +66,22 @@
       border-width: 4px;
       box-shadow: 0 0 12px rgba(0,0,0,0.6);
     }
+
+    /* Radio Equalizer Animation */
+    @keyframes pulseBar {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
+    .eq-bar {
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      background-color: var(--accent-sec);
+      margin: 0 1px;
+      animation: pulseBar 0.6s infinite ease-in-out;
+    }
+    .eq-bar:nth-child(2) { animation-delay: 0.2s; }
+    .eq-bar:nth-child(3) { animation-delay: 0.4s; }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
@@ -240,7 +256,6 @@
       </div>
 
       <div id="h2h-bars" class="space-y-4 max-w-3xl mx-auto">
-        <!-- Populated dynamically by calculateH2H() -->
         <p class="text-center text-sm text-zinc-400 py-6">Loading season race & qualifying telemetry...</p>
       </div>
     </section>
@@ -257,9 +272,7 @@
           <button onclick="resetSimulator()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-semibold">Reset</button>
         </div>
 
-        <div id="sim-selectors" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <!-- Populated dynamically -->
-        </div>
+        <div id="sim-selectors" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
 
         <div class="flex items-center justify-between bg-zinc-950 p-3 rounded-lg border border-zinc-800 text-xs">
           <span class="font-semibold text-zinc-300">⚡ Add +8 pts Sprint Win to P1 Driver?</span>
@@ -276,29 +289,49 @@
 
     <!-- ================= TAB 4: LIVE FIA RACE CONTROL + TEAM RADIO SOUNDBOARD ================= -->
     <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
-      <!-- OpenF1 Live Race Control Feed -->
+      <!-- OpenF1 Live Race Control Feed (Tap to Read Aloud) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-3">
         <div class="flex justify-between items-center">
           <div>
             <h3 class="font-display font-bold text-base">🚩 OpenF1 FIA Race Control Feed</h3>
-            <p class="text-xs text-zinc-400">Latest official flags, DRS, & steward messages</p>
+            <p class="text-xs text-zinc-400">🔊 Tap any message below to hear FIA Race Control read it aloud</p>
           </div>
           <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold">↻ Refresh</button>
         </div>
-        <div id="race-control-list" class="space-y-2 max-h-80 overflow-y-auto pr-1 text-xs font-mono">
+        <div id="race-control-list" class="space-y-2 max-h-96 overflow-y-auto pr-1 text-xs font-mono">
           <p class="text-zinc-500">Connecting to api.openf1.org/v1/race_control...</p>
         </div>
       </div>
 
-      <!-- Iconic Team Radio Soundboard -->
+      <!-- Iconic Team Radio Soundboard (Real Broadcast Audio + Live OpenF1 Car Radio) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
-        <div>
-          <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
-          <p class="text-xs text-zinc-400">Tap any transmission to play Pitwall Radio Beep + Voice Synthesis</p>
+        <div class="flex justify-between items-start gap-2">
+          <div>
+            <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
+            <p class="text-xs text-zinc-400">Tap any button to play the original broadcast driver radio audio</p>
+          </div>
+          <button onclick="stopAllAudio()" class="text-[11px] bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 px-2.5 py-1 rounded font-bold shrink-0">
+            ⏹ Stop
+          </button>
         </div>
+
+        <!-- Iconic Original Broadcast Clips -->
         <div id="radio-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
-        <div id="radio-transcript" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center text-xs font-mono theme-sec-text min-h-[44px] flex items-center justify-center">
+
+        <!-- Active Transmission Status Box -->
+        <div id="radio-transcript" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center text-xs font-mono theme-sec-text min-h-[48px] flex items-center justify-center gap-2">
           [PITWALL STANDBY — SELECT A TRANSMISSION]
+        </div>
+
+        <!-- Live Session Car Radio Recordings from OpenF1 -->
+        <div class="border-t border-zinc-800 pt-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-display font-bold text-zinc-300">🎙️ Latest Session Raw Driver Radio (OpenF1 MP3)</span>
+            <button onclick="fetchLiveTeamRadio()" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-300">↻ Load Latest</button>
+          </div>
+          <div id="live-driver-radio" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
+            <p class="text-[11px] text-zinc-500 col-span-full">Fetching raw car radio recordings from OpenF1...</p>
+          </div>
         </div>
       </div>
     </section>
@@ -331,6 +364,11 @@
     let allRaceResults = [];
     let allQualiResults = [];
 
+    // Shared Audio Instances
+    let sharedAudioCtx = null;
+    let currentRadioAudio = null;
+    let raceControlMessages = [];
+
     // Initialize App
     document.addEventListener("DOMContentLoaded", () => {
       initTheme();
@@ -339,6 +377,7 @@
       fetchStandingsAndH2H();
       fetchRaceControl();
       initRadioSoundboard();
+      fetchLiveTeamRadio();
 
       document.getElementById("tz-toggle").addEventListener("click", () => {
         useUTC = !useUTC;
@@ -421,7 +460,7 @@
         const wx = await res.json();
 
         const airTemp = Math.round(wx.current.temperature_2m);
-        const trackTemp = Math.round(airTemp + 11); // Typical asphalt solar heating delta
+        const trackTemp = Math.round(airTemp + 11);
         const wind = Math.round(wx.current.wind_speed_10m);
         const rainProb = wx.daily?.precipitation_probability_max?.[0] ?? 10;
 
@@ -487,7 +526,10 @@
       if (countdownTimer) clearInterval(countdownTimer);
       const update = () => {
         const diff = targetDate - new Date();
-        if (diff <= 0) return;
+        if (diff <= 0) {
+          ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach(id => document.getElementById(id).textContent = "00");
+          return;
+        }
         document.getElementById("cd-days").textContent = String(Math.floor(diff / 86400000)).padStart(2, '0');
         document.getElementById("cd-hours").textContent = String(Math.floor((diff / 3600000) % 24)).padStart(2, '0');
         document.getElementById("cd-mins").textContent = String(Math.floor((diff / 60000) % 60)).padStart(2, '0');
@@ -568,7 +610,6 @@
       d1Sel.innerHTML = opts;
       d2Sel.innerHTML = opts;
 
-      // Default to Max Verstappen vs P2/Rival if available
       const maxIdx = driversList.findIndex(d => d.Driver.driverId.includes("verstappen"));
       d1Sel.selectedIndex = maxIdx >= 0 ? maxIdx : 0;
       d2Sel.selectedIndex = maxIdx === 0 ? 1 : 0;
@@ -657,7 +698,6 @@
         </div>
       `).join("");
 
-      // Pre-fill P1-P10 with current top 10
       document.querySelectorAll(".sim-pick").forEach((sel, idx) => {
         if (driversList[idx]) sel.value = driversList[idx].Driver.driverId;
       });
@@ -720,94 +760,271 @@
       initSimulator();
     }
 
-    // ================= 5. OPENF1 RACE CONTROL & TEAM RADIO SOUNDBOARD =================
+    // ================= 5. OPENF1 RACE CONTROL (TAP TO READ) & REAL AUDIO SOUNDBOARD =================
+    function playPitwallBeep() {
+      try {
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume();
+
+        const osc = sharedAudioCtx.createOscillator();
+        const gain = sharedAudioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1400, sharedAudioCtx.currentTime);
+        osc.frequency.setValueAtTime(1850, sharedAudioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, sharedAudioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(sharedAudioCtx.destination);
+        osc.start();
+        osc.stop(sharedAudioCtx.currentTime + 0.18);
+      } catch (e) {}
+    }
+
+    function stopAllAudio() {
+      if (currentRadioAudio) {
+        currentRadioAudio.pause();
+        currentRadioAudio.currentTime = 0;
+        currentRadioAudio = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      document.getElementById("radio-transcript").innerHTML = `[PITWALL STANDBY — SELECT A TRANSMISSION]`;
+    }
+
     async function fetchRaceControl() {
       const list = document.getElementById("race-control-list");
       try {
         const res = await fetch("https://api.openf1.org/v1/race_control?session_key=latest");
         const data = await res.json();
-        const latest = data.slice(-12).reverse();
+        const latest = data.slice(-14).reverse();
 
         if (!latest.length) throw new Error("Empty feed");
+        raceControlMessages = latest;
 
-        list.innerHTML = latest.map(msg => {
+        list.innerHTML = latest.map((msg, idx) => {
           const isYellow = msg.message?.includes("YELLOW") || msg.flag === "YELLOW";
           const isRed = msg.message?.includes("RED") || msg.flag === "RED";
           const color = isRed ? "border-red-500 text-red-300" : isYellow ? "border-amber-400 text-amber-300" : "border-zinc-800 text-zinc-300";
           const timeStr = msg.date ? new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : "FIA";
           return `
-            <div class="bg-zinc-950 p-2.5 rounded border-l-4 ${color}">
-              <span class="text-[10px] text-zinc-500 block">${timeStr} • ${msg.category || 'RACE CONTROL'}</span>
-              <span class="font-bold">${msg.message}</span>
+            <div onclick="readRaceControlMessage(${idx})" class="bg-zinc-950 hover:bg-zinc-900 active:scale-[0.99] cursor-pointer transition p-2.5 rounded border-l-4 ${color} flex justify-between items-center gap-2 group" title="Tap to read message aloud">
+              <div>
+                <span class="text-[10px] text-zinc-500 block">${timeStr} • ${msg.category || 'RACE CONTROL'}</span>
+                <span class="font-bold">${msg.message}</span>
+              </div>
+              <span class="text-zinc-500 group-hover:theme-sec-text text-sm shrink-0">🔊</span>
             </div>
           `;
         }).join("");
       } catch (e) {
-        list.innerHTML = `
-          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-emerald-500 text-zinc-300">
-            <span class="text-[10px] text-zinc-500 block">FIA TELEMETRY ARCHIVE</span>
-            <span class="font-bold">🟢 DRS ENABLED IN ZONE 1 & ZONE 2</span>
+        raceControlMessages = [
+          { category: "FIA TELEMETRY ARCHIVE", message: "DRS ENABLED IN ZONE 1 AND ZONE 2" },
+          { category: "STEWARDS", message: "CAR 1 (VER) TRACK LIMITS NOTED AT TURN 9" },
+          { category: "RACE DIRECTOR", message: "PIT LANE OPEN — RISK OF RAIN FOR SESSION IS 10%" }
+        ];
+        list.innerHTML = raceControlMessages.map((msg, idx) => `
+          <div onclick="readRaceControlMessage(${idx})" class="bg-zinc-950 hover:bg-zinc-900 cursor-pointer transition p-2.5 rounded border-l-4 border-emerald-500 text-zinc-300 flex justify-between items-center gap-2 group">
+            <div>
+              <span class="text-[10px] text-zinc-500 block">${msg.category}</span>
+              <span class="font-bold">${msg.message}</span>
+            </div>
+            <span class="text-zinc-500 group-hover:theme-sec-text text-sm shrink-0">🔊</span>
           </div>
-          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-amber-400 text-amber-300">
-            <span class="text-[10px] text-zinc-500 block">STEWARDS</span>
-            <span class="font-bold">⚠️ CAR 1 (VER) TRACK LIMITS NOTED AT TURN 9</span>
-          </div>
-          <div class="bg-zinc-950 p-2.5 rounded border-l-4 border-zinc-700 text-zinc-300">
-            <span class="text-[10px] text-zinc-500 block">RACE DIRECTOR</span>
-            <span class="font-bold">🏁 PIT LANE OPEN — RISK OF RAIN FOR SESSION IS 10%</span>
-          </div>
-        `;
+        `).join("");
       }
     }
 
+    // 1. Tap-to-Read handler for OpenF1 FIA Race Control Feed
+    function readRaceControlMessage(idx) {
+      const msgObj = raceControlMessages[idx];
+      if (!msgObj) return;
+
+      stopAllAudio();
+      playPitwallBeep();
+
+      const spokenText = `${msgObj.category || 'Race Control'}. ${msgObj.message}`;
+      document.getElementById("radio-transcript").innerHTML = `
+        <span class="inline-flex items-center">
+          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+        </span>
+        <span>🚩 FIA: "${msgObj.message}"</span>
+      `;
+
+      if ('speechSynthesis' in window) {
+        setTimeout(() => {
+          const utter = new SpeechSynthesisUtterance(spokenText);
+          utter.rate = 1.05;
+          utter.pitch = 0.92;
+          utter.onend = () => {
+            document.getElementById("radio-transcript").innerHTML = `🚩 "${msgObj.message}"`;
+          };
+          window.speechSynthesis.speak(utter);
+        }, 200);
+      }
+    }
+
+    // 2. Original Broadcast Audio Clips for Iconic Pitwall Radio Soundboard
     const RADIO_CLIPS = [
-      { driver: "MAX VERSTAPPEN #1", label: "🦁 Simply Lovely!", quote: "Haha, yes boys! Simply lovely! What a rocketship today." },
-      { driver: "GP LAMBIASE (ENGINEER)", label: "🛞 Box, Box!", quote: "Box Max, Box, Box. Keep to the left of the white line on pit entry." },
-      { driver: "CARLOS SAINZ #55", label: "🎶 Smooth Operator", quote: "Smooth Operator! Smooooth Operatooor!" },
-      { driver: "CHARLES LECLERC #16", label: "🐎 Let's Go Baby!", quote: "Yes! Let's go baby! Forza Ferrari!" },
-      { driver: "KIMI RAIKKONEN #7", label: "🧊 Leave Me Alone", quote: "Leave me alone, I know what to do." },
-      { driver: "FERNANDO ALONSO #14", label: "⚡ All The Time Space", quote: "All the time you have to leave a space!" }
+      {
+        driver: "MAX VERSTAPPEN #1",
+        label: "🦁 Simply Lovely!",
+        quote: "Haha, yes boys! Simply lovely!",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/max-verstappen-simply-lovely.mp3",
+          "https://www.myinstants.com/media/sounds/simply-lovely.mp3"
+        ]
+      },
+      {
+        driver: "GP LAMBIASE (ENGINEER)",
+        label: "🛞 Box, Box!",
+        quote: "Box, Box. Box, Box.",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/box-box.mp3",
+          "https://www.myinstants.com/media/sounds/f1-radio-notification.mp3"
+        ]
+      },
+      {
+        driver: "CARLOS SAINZ #55",
+        label: "🎶 Smooth Operator",
+        quote: "Smooth Operator! Smooooth Operatooor!",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3",
+          "https://www.myinstants.com/media/sounds/smooth-operator-carlos-sainz.mp3"
+        ]
+      },
+      {
+        driver: "CHARLES LECLERC #16",
+        label: "🐎 Let's Go Baby!",
+        quote: "Yes! Let's go baby!",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/charles-leclerc-lets-go-baby.mp3",
+          "https://www.myinstants.com/media/sounds/leclerc-yes.mp3"
+        ]
+      },
+      {
+        driver: "KIMI RAIKKONEN #7",
+        label: "🧊 Leave Me Alone",
+        quote: "Leave me alone, I know what to do.",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/kimi-raikkonen-leave-me-alone.mp3",
+          "https://www.myinstants.com/media/sounds/leave-me-alone-i-know-what-to-do.mp3"
+        ]
+      },
+      {
+        driver: "FERNANDO ALONSO #14",
+        label: "⚡ All The Time Space",
+        quote: "All the time you have to leave a space!",
+        audioUrls: [
+          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3",
+          "https://www.myinstants.com/media/sounds/alonso-all-the-time-you-have-to-leave-a-space.mp3"
+        ]
+      }
     ];
 
     function initRadioSoundboard() {
       const board = document.getElementById("radio-board");
       board.innerHTML = RADIO_CLIPS.map((c, i) => `
-        <button onclick="playRadioClip(${i})" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-left transition group">
+        <button onclick="playRadioClip(${i})" class="bg-zinc-950 hover:bg-zinc-900 active:scale-[0.98] border border-zinc-800 p-3 rounded-xl text-left transition group">
           <span class="text-[10px] font-bold text-zinc-500 block">${c.driver}</span>
           <span class="font-display font-bold text-xs md:text-sm text-white group-hover:theme-sec-text">🔊 ${c.label}</span>
         </button>
       `).join("");
     }
 
+    // Plays the original race radio MP3 with multi-mirror fallback
     function playRadioClip(idx) {
       const clip = RADIO_CLIPS[idx];
-      document.getElementById("radio-transcript").textContent = `📻 "${clip.quote}"`;
+      stopAllAudio();
+      playPitwallBeep();
 
-      // Synthesize authentic F1 Pitwall Two-Tone Radio Beep using Web Audio API
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1400, ctx.currentTime);
-        osc.frequency.setValueAtTime(1850, ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.18);
-      } catch (e) {}
+      const transcriptEl = document.getElementById("radio-transcript");
+      transcriptEl.innerHTML = `
+        <span class="inline-flex items-center">
+          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+        </span>
+        <span>📻 Playing Original Audio: "${clip.quote}"</span>
+      `;
 
-      // Speak radio message after beep
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        setTimeout(() => {
-          const utter = new SpeechSynthesisUtterance(clip.quote);
-          utter.rate = 1.08;
-          utter.pitch = 0.95;
-          window.speechSynthesis.speak(utter);
-        }, 200);
+      setTimeout(() => {
+        tryPlayAudioUrls([...clip.audioUrls], clip.quote);
+      }, 180);
+    }
+
+    function tryPlayAudioUrls(urls, quoteText) {
+      const transcriptEl = document.getElementById("radio-transcript");
+      if (!urls.length) {
+        transcriptEl.innerHTML = `⚠️ Audio stream blocked by network — "${quoteText}"`;
+        return;
       }
+
+      const nextUrl = urls.shift();
+      const audio = new Audio(nextUrl);
+      currentRadioAudio = audio;
+
+      audio.onended = () => {
+        transcriptEl.innerHTML = `📻 "${quoteText}"`;
+      };
+
+      audio.onerror = () => {
+        tryPlayAudioUrls(urls, quoteText);
+      };
+
+      audio.play().catch(() => {
+        tryPlayAudioUrls(urls, quoteText);
+      });
+    }
+
+    // Fetch real raw car radio MP3s from OpenF1's latest session
+    async function fetchLiveTeamRadio() {
+      const container = document.getElementById("live-driver-radio");
+      try {
+        const res = await fetch("https://api.openf1.org/v1/team_radio?session_key=latest");
+        const data = await res.json();
+        const latestClips = data.slice(-9).reverse();
+
+        if (!latestClips.length) throw new Error("No clips");
+
+        container.innerHTML = latestClips.map((clip, i) => {
+          const timeStr = clip.date ? new Date(clip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "LIVE";
+          return `
+            <button onclick="playRawOpenF1Radio('${clip.recording_url}', 'CAR #${clip.driver_number} (${timeStr})')" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-2 rounded-lg text-left transition flex items-center justify-between">
+              <div>
+                <span class="text-[10px] text-zinc-400 block font-mono">${timeStr}</span>
+                <span class="font-display font-bold text-xs theme-sec-text">CAR #${clip.driver_number}</span>
+              </div>
+              <span class="text-xs">▶️</span>
+            </button>
+          `;
+        }).join("");
+      } catch (e) {
+        container.innerHTML = `<p class="text-[11px] text-zinc-500 col-span-full">No active session raw team radio found.</p>`;
+      }
+    }
+
+    function playRawOpenF1Radio(mp3Url, label) {
+      stopAllAudio();
+      playPitwallBeep();
+
+      const transcriptEl = document.getElementById("radio-transcript");
+      transcriptEl.innerHTML = `
+        <span class="inline-flex items-center">
+          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+        </span>
+        <span>🎙️ LIVE CAR RADIO: ${label}</span>
+      `;
+
+      setTimeout(() => {
+        const audio = new Audio(mp3Url);
+        currentRadioAudio = audio;
+        audio.onended = () => {
+          transcriptEl.innerHTML = `🎙️ Finished playing ${label}`;
+        };
+        audio.play().catch(() => {
+          transcriptEl.innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
+        });
+      }, 180);
     }
 
     function pinDriver(info) {
@@ -829,4 +1046,3 @@
   </script>
 </body>
 </html>
-
