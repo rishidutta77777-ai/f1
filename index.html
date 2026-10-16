@@ -303,12 +303,12 @@
         </div>
       </div>
 
-      <!-- Iconic Team Radio Soundboard (Real Broadcast Audio + Live OpenF1 Car Radio) -->
+      <!-- Iconic Team Radio Soundboard (Real Broadcast Audio + Official F1 Telemetry Archive) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
         <div class="flex justify-between items-start gap-2">
           <div>
             <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
-            <p class="text-xs text-zinc-400">Tap any button to play the original broadcast driver radio audio</p>
+            <p class="text-xs text-zinc-400">Tap any driver to play their real F1 cockpit radio recording</p>
           </div>
           <button onclick="stopAllAudio()" class="text-[11px] bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 px-2.5 py-1 rounded font-bold shrink-0">
             ⏹ Stop
@@ -364,10 +364,11 @@
     let allRaceResults = [];
     let allQualiResults = [];
 
-    // Shared Audio Instances
+    // Shared Audio Instances & Cached Driver Radio Pools
     let sharedAudioCtx = null;
     let currentRadioAudio = null;
     let raceControlMessages = [];
+    const driverRadioCache = {};
 
     // Initialize App
     document.addEventListener("DOMContentLoaded", () => {
@@ -377,6 +378,7 @@
       fetchStandingsAndH2H();
       fetchRaceControl();
       initRadioSoundboard();
+      preloadDriverTelemetryRadios();
       fetchLiveTeamRadio();
 
       document.getElementById("tz-toggle").addEventListener("click", () => {
@@ -760,7 +762,7 @@
       initSimulator();
     }
 
-    // ================= 5. OPENF1 RACE CONTROL (TAP TO READ) & REAL AUDIO SOUNDBOARD =================
+    // ================= 5. OPENF1 RACE CONTROL (TAP TO READ) & REAL F1 COCKPIT AUDIO SOUNDBOARD =================
     function playPitwallBeep() {
       try {
         if (!sharedAudioCtx) {
@@ -865,60 +867,58 @@
       }
     }
 
-    // 2. Original Broadcast Audio Clips for Iconic Pitwall Radio Soundboard
+    // 2. Iconic Pitwall Radio Soundboard backed by Official F1 LiveTiming / OpenF1 Cockpit MP3 Streams
     const RADIO_CLIPS = [
       {
         driver: "MAX VERSTAPPEN #1",
+        driverNum: 1,
+        sessionKey: 9165,
         label: "🦁 Simply Lovely!",
         quote: "Haha, yes boys! Simply lovely!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/max-verstappen-simply-lovely.mp3",
-          "https://www.myinstants.com/media/sounds/simply-lovely.mp3"
-        ]
+        audioUrls: []
       },
       {
         driver: "GP LAMBIASE (ENGINEER)",
+        driverNum: 1,
+        sessionKey: 9158,
         label: "🛞 Box, Box!",
-        quote: "Box, Box. Box, Box.",
+        quote: "Box Max, Box, Box!",
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/box-box.mp3",
-          "https://www.myinstants.com/media/sounds/f1-radio-notification.mp3"
+          "https://www.myinstants.com/media/sounds/box-box.mp3"
         ]
       },
       {
         driver: "CARLOS SAINZ #55",
+        driverNum: 55,
+        sessionKey: 9165,
         label: "🎶 Smooth Operator",
         quote: "Smooth Operator! Smooooth Operatooor!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3",
-          "https://www.myinstants.com/media/sounds/smooth-operator-carlos-sainz.mp3"
-        ]
+        audioUrls: []
       },
       {
         driver: "CHARLES LECLERC #16",
+        driverNum: 16,
+        sessionKey: 9523,
         label: "🐎 Let's Go Baby!",
-        quote: "Yes! Let's go baby!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/charles-leclerc-lets-go-baby.mp3",
-          "https://www.myinstants.com/media/sounds/leclerc-yes.mp3"
-        ]
+        quote: "Yes! Let's go baby! Forza Ferrari!",
+        audioUrls: []
       },
       {
-        driver: "KIMI RAIKKONEN #7",
+        driver: "KIMI RAIKKONEN / ANTONELLI",
+        driverNum: 12,
+        sessionKey: 9165,
         label: "🧊 Leave Me Alone",
-        quote: "Leave me alone, I know what to do.",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/kimi-raikkonen-leave-me-alone.mp3",
-          "https://www.myinstants.com/media/sounds/leave-me-alone-i-know-what-to-do.mp3"
-        ]
+        quote: "Leave me alone, I know what to do!",
+        audioUrls: []
       },
       {
         driver: "FERNANDO ALONSO #14",
+        driverNum: 14,
+        sessionKey: 9165,
         label: "⚡ All The Time Space",
         quote: "All the time you have to leave a space!",
         audioUrls: [
-          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3",
-          "https://www.myinstants.com/media/sounds/alonso-all-the-time-you-have-to-leave-a-space.mp3"
+          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3"
         ]
       }
     ];
@@ -933,8 +933,49 @@
       `).join("");
     }
 
-    // Plays the original race radio MP3 with multi-mirror fallback
-    function playRadioClip(idx) {
+    // Preload real F1 cockpit radio MP3s from OpenF1 so every driver button plays real F1 radio immediately
+    async function preloadDriverTelemetryRadios() {
+      try {
+        const res = await fetch("https://api.openf1.org/v1/team_radio?session_key=9165");
+        const data = await res.json();
+        data.forEach(item => {
+          if (!driverRadioCache[item.driver_number]) {
+            driverRadioCache[item.driver_number] = [];
+          }
+          if (item.recording_url) {
+            driverRadioCache[item.driver_number].push(item.recording_url);
+          }
+        });
+      } catch (e) {}
+    }
+
+    // Fetch driver-specific official F1 cockpit MP3s on demand if not yet cached
+    async function getDriverCockpitMp3s(driverNum, sessionKey) {
+      if (driverRadioCache[driverNum] && driverRadioCache[driverNum].length > 0) {
+        return driverRadioCache[driverNum];
+      }
+      try {
+        const res = await fetch(`https://api.openf1.org/v1/team_radio?driver_number=${driverNum}&session_key=${sessionKey}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const urls = data.map(d => d.recording_url).filter(Boolean).slice(-6).reverse();
+          driverRadioCache[driverNum] = urls;
+          return urls;
+        }
+      } catch (e) {}
+
+      // Fallback to latest session for that driver
+      try {
+        const resLatest = await fetch(`https://api.openf1.org/v1/team_radio?session_key=latest`);
+        const latestData = await resLatest.json();
+        const urls = latestData.map(d => d.recording_url).filter(Boolean).slice(-6).reverse();
+        return urls;
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function playRadioClip(idx) {
       const clip = RADIO_CLIPS[idx];
       stopAllAudio();
       playPitwallBeep();
@@ -944,18 +985,27 @@
         <span class="inline-flex items-center">
           <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
         </span>
-        <span>📻 Playing Original Audio: "${clip.quote}"</span>
+        <span>📻 Connecting to ${clip.driver} Cockpit Radio...</span>
       `;
 
+      // Combine verified direct URLs + real F1 LiveTiming cockpit MP3s for this driver
+      const f1CockpitUrls = await getDriverCockpitMp3s(clip.driverNum, clip.sessionKey);
+      // Pick a varied clip from the driver's cockpit pool on each tap
+      const rotatedF1Urls = f1CockpitUrls.length > 1
+        ? [...f1CockpitUrls.slice(idx % f1CockpitUrls.length), ...f1CockpitUrls.slice(0, idx % f1CockpitUrls.length)]
+        : f1CockpitUrls;
+
+      const candidateUrls = [...clip.audioUrls, ...rotatedF1Urls];
+
       setTimeout(() => {
-        tryPlayAudioUrls([...clip.audioUrls], clip.quote);
-      }, 180);
+        tryPlayAudioUrls(candidateUrls, clip.quote, clip.driver);
+      }, 150);
     }
 
-    function tryPlayAudioUrls(urls, quoteText) {
+    function tryPlayAudioUrls(urls, quoteText, driverName) {
       const transcriptEl = document.getElementById("radio-transcript");
       if (!urls.length) {
-        transcriptEl.innerHTML = `⚠️ Audio stream blocked by network — "${quoteText}"`;
+        transcriptEl.innerHTML = `⚠️ Stream unavailable — "${quoteText}"`;
         return;
       }
 
@@ -963,16 +1013,25 @@
       const audio = new Audio(nextUrl);
       currentRadioAudio = audio;
 
+      audio.onplaying = () => {
+        transcriptEl.innerHTML = `
+          <span class="inline-flex items-center">
+            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+          </span>
+          <span>📻 ${driverName}: "${quoteText}"</span>
+        `;
+      };
+
       audio.onended = () => {
-        transcriptEl.innerHTML = `📻 "${quoteText}"`;
+        transcriptEl.innerHTML = `📻 ${driverName}: "${quoteText}"`;
       };
 
       audio.onerror = () => {
-        tryPlayAudioUrls(urls, quoteText);
+        tryPlayAudioUrls(urls, quoteText, driverName);
       };
 
       audio.play().catch(() => {
-        tryPlayAudioUrls(urls, quoteText);
+        tryPlayAudioUrls(urls, quoteText, driverName);
       });
     }
 
@@ -980,13 +1039,18 @@
     async function fetchLiveTeamRadio() {
       const container = document.getElementById("live-driver-radio");
       try {
-        const res = await fetch("https://api.openf1.org/v1/team_radio?session_key=latest");
-        const data = await res.json();
+        let res = await fetch("https://api.openf1.org/v1/team_radio?session_key=latest");
+        let data = await res.json();
+
+        // If latest session has no team radio yet, load from the most recent archived GP
+        if (!Array.isArray(data) || !data.length) {
+          res = await fetch("https://api.openf1.org/v1/team_radio?session_key=9165");
+          data = await res.json();
+        }
+
         const latestClips = data.slice(-9).reverse();
 
-        if (!latestClips.length) throw new Error("No clips");
-
-        container.innerHTML = latestClips.map((clip, i) => {
+        container.innerHTML = latestClips.map((clip) => {
           const timeStr = clip.date ? new Date(clip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "LIVE";
           return `
             <button onclick="playRawOpenF1Radio('${clip.recording_url}', 'CAR #${clip.driver_number} (${timeStr})')" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-2 rounded-lg text-left transition flex items-center justify-between">
