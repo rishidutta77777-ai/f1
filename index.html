@@ -115,9 +115,13 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800 w-full sm:w-auto justify-between sm:justify-end">
-        <div class="flex items-center">
+        <div class="flex items-center gap-1.5">
           <span class="text-zinc-500 font-semibold">FAV:</span>
-          <span id="pinned-driver" class="font-bold theme-sec-text ml-1 truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
+          <span id="pinned-driver" class="font-bold theme-sec-text truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
+          <span id="anthem-playing-indicator" class="hidden items-center gap-1 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-700">
+            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+            <button onclick="stopDriverAnthem()" class="text-[10px] text-red-400 font-bold ml-1" title="Stop Song">⏹</button>
+          </span>
         </div>
         <span class="text-zinc-700">|</span>
 
@@ -349,7 +353,10 @@
     <!-- ================= TAB 5: STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
-        <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-display font-bold text-base">Drivers' Championship</h3>
+          <span class="text-[10px] text-zinc-400">Tap ⭐ to play 10s Driver Anthem!</span>
+        </div>
         <div id="wdc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
@@ -376,8 +383,59 @@
 
     let sharedAudioCtx = null;
     let currentRadioAudio = null;
+    let currentAnthemAudio = null;
+    let anthemTimeout = null;
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
+
+    // ORIGINAL DRIVER SONGS MAP (Plays for 10 seconds when user pins a driver)
+    const DRIVER_ANTHEMS = {
+      max_verstappen: [
+        "https://www.myinstants.com/media/sounds/tu-tu-tu-du-max-verstappen.mp3",
+        "https://www.myinstants.com/media/sounds/max-verstappen-song.mp3",
+        "https://www.myinstants.com/media/sounds/33-max-verstappen.mp3"
+      ],
+      hamilton: [
+        "https://www.myinstants.com/media/sounds/lewis-hamilton.mp3",
+        "https://www.myinstants.com/media/sounds/in-in-in-in-in-hamilton.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      leclerc: [
+        "https://www.myinstants.com/media/sounds/charles-leclerc.mp3",
+        "https://www.myinstants.com/media/sounds/charles-leclerc-song.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      sainz: [
+        "https://www.myinstants.com/media/sounds/smooth-operator.mp3",
+        "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3"
+      ],
+      norris: [
+        "https://www.myinstants.com/media/sounds/lando-norris.mp3",
+        "https://www.myinstants.com/media/sounds/its-friday-then-saturday-sunday-what.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      alonso: [
+        "https://www.myinstants.com/media/sounds/fernando-alonso.mp3",
+        "https://www.myinstants.com/media/sounds/magic-alonso.mp3",
+        "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3"
+      ],
+      perez: [
+        "https://www.myinstants.com/media/sounds/checo-perez.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      piastri: [
+        "https://www.myinstants.com/media/sounds/oscar-piastri.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      russell: [
+        "https://www.myinstants.com/media/sounds/george-russell.mp3",
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
+      ],
+      default: [
+        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3",
+        "https://www.myinstants.com/media/sounds/formula-1-theme.mp3"
+      ]
+    };
 
     // Service Worker Auto-Update Registration
     if ("serviceWorker" in navigator) {
@@ -632,7 +690,7 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span class="font-mono font-bold theme-accent-text">${d.points} PTS</span>
-            <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)')" class="hover:scale-125 transition">⭐</button>
+            <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)', '${d.Driver.driverId}')" class="hover:scale-125 active:scale-95 transition" title="Set Favorite & Play 10s Driver Song">⭐</button>
           </div>
         </div>
       `).join("");
@@ -826,7 +884,25 @@
       } catch (e) {}
     }
 
+    function stopDriverAnthem() {
+      if (anthemTimeout) {
+        clearTimeout(anthemTimeout);
+        anthemTimeout = null;
+      }
+      if (currentAnthemAudio) {
+        currentAnthemAudio.pause();
+        currentAnthemAudio.currentTime = 0;
+        currentAnthemAudio = null;
+      }
+      const ind = document.getElementById("anthem-playing-indicator");
+      if (ind) {
+        ind.classList.add("hidden");
+        ind.classList.remove("inline-flex");
+      }
+    }
+
     function stopAllAudio() {
+      stopDriverAnthem();
       if (currentRadioAudio) {
         currentRadioAudio.pause();
         currentRadioAudio.currentTime = 0;
@@ -836,6 +912,57 @@
         window.speechSynthesis.cancel();
       }
       document.getElementById("radio-transcript").innerHTML = `[PITWALL STANDBY — SELECT A TRANSMISSION]`;
+    }
+
+    // Plays the chosen driver's original song for exactly 10 seconds
+    function playDriverAnthem10Sec(driverId) {
+      stopAllAudio();
+
+      let key = "default";
+      if (driverId) {
+        const lower = driverId.toLowerCase();
+        if (lower.includes("verstappen")) key = "max_verstappen";
+        else if (lower.includes("hamilton")) key = "hamilton";
+        else if (lower.includes("leclerc")) key = "leclerc";
+        else if (lower.includes("sainz")) key = "sainz";
+        else if (lower.includes("norris")) key = "norris";
+        else if (lower.includes("alonso")) key = "alonso";
+        else if (lower.includes("perez")) key = "perez";
+        else if (lower.includes("piastri")) key = "piastri";
+        else if (lower.includes("russell")) key = "russell";
+      }
+
+      const urls = [...(DRIVER_ANTHEMS[key] || DRIVER_ANTHEMS.default), ...DRIVER_ANTHEMS.default];
+      tryPlayAnthemCandidate(urls);
+    }
+
+    function tryPlayAnthemCandidate(urls) {
+      if (!urls.length) return;
+      const nextUrl = urls.shift();
+      const audio = new Audio(nextUrl);
+      audio.loop = true; // Ensures if clip is < 10s, it keeps playing for the full 10 seconds
+      currentAnthemAudio = audio;
+
+      audio.onplaying = () => {
+        const ind = document.getElementById("anthem-playing-indicator");
+        if (ind) {
+          ind.classList.remove("hidden");
+          ind.classList.add("inline-flex");
+        }
+        if (anthemTimeout) clearTimeout(anthemTimeout);
+        // Stop automatically after exactly 10 seconds (10,000 ms)
+        anthemTimeout = setTimeout(() => {
+          stopDriverAnthem();
+        }, 10000);
+      };
+
+      audio.onerror = () => {
+        tryPlayAnthemCandidate(urls);
+      };
+
+      audio.play().catch(() => {
+        tryPlayAnthemCandidate(urls);
+      });
     }
 
     async function fetchRaceControl() {
@@ -1086,9 +1213,10 @@
       }, 180);
     }
 
-    function pinDriver(info) {
+    function pinDriver(info, driverId) {
       localStorage.setItem("f1_pinned_driver", info);
       loadPinnedDriver();
+      playDriverAnthem10Sec(driverId);
     }
 
     function loadPinnedDriver() {
