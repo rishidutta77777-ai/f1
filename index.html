@@ -100,7 +100,6 @@
     .eq-bar:nth-child(2) { animation-delay: 0.2s; }
     .eq-bar:nth-child(3) { animation-delay: 0.4s; }
 
-    /* Translucent Modal Animation */
     @keyframes modalPop {
       0% { opacity: 0; transform: scale(0.94) translateY(8px); }
       100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -110,11 +109,29 @@
     }
   </style>
 </head>
-<body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
+<body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-24">
 
-  <!-- Hidden YouTube Audio Engine Container -->
-  <div id="yt-audio-Wrapper" class="fixed -bottom-10 -left-10 w-1 h-1 opacity-0 pointer-events-none overflow-hidden">
+  <!-- Hidden YouTube Audio Engine Container (200x200 offscreen so mobile Chrome never throttles audio) -->
+  <div id="yt-audio-Wrapper" style="position:fixed; bottom:-300px; left:-300px; width:200px; height:200px; opacity:0.01; pointer-events:none; z-index:-1;">
     <div id="yt-anthem-player"></div>
+  </div>
+
+  <!-- FLOATING GLOBAL AUDIO TOAST BAR (Visible on ANY tab when an Anthem or Radio plays) -->
+  <div id="floating-audio-bar" class="fixed bottom-3 left-3 right-3 z-40 hidden max-w-2xl mx-auto">
+    <div class="bg-zinc-950/95 backdrop-blur-md border border-zinc-700 rounded-xl p-3 shadow-2xl flex items-center justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between text-xs font-mono mb-1">
+          <span id="floating-audio-title" class="theme-sec-text font-bold truncate">🎵 Playing Driver Anthem...</span>
+          <span id="floating-audio-timer" class="text-zinc-400 font-bold ml-2 shrink-0">10.0s</span>
+        </div>
+        <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div id="floating-audio-progress" class="h-full theme-accent-bg transition-all duration-100" style="width: 0%"></div>
+        </div>
+      </div>
+      <button onclick="stopAllAudio()" class="bg-red-600 hover:bg-red-500 active:scale-95 text-white font-display font-bold text-xs px-3.5 py-2 rounded-lg shadow shrink-0">
+        ⏹ STOP
+      </button>
+    </div>
   </div>
 
   <!-- Top Telemetry & Theme Bar -->
@@ -155,7 +172,6 @@
     <section class="relative overflow-hidden rounded-2xl theme-hero border border-zinc-800 p-4 sm:p-5 md:p-7 shadow-xl">
       <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 sm:gap-5">
         
-        <!-- Left Side: Race Info + Mini Track Map Beside It -->
         <div class="flex flex-row items-center justify-between gap-3 sm:gap-5 flex-1 min-w-0">
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
@@ -185,7 +201,7 @@
           </button>
         </div>
 
-        <!-- Right Side: Lights Out Countdown -->
+        <!-- Lights Out Countdown -->
         <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-3.5 w-full lg:w-auto text-center shadow-inner shrink-0">
           <p class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5">Lights Out Countdown</p>
           <div id="countdown" class="font-display text-xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
@@ -381,7 +397,10 @@
     <!-- ================= TAB 5: STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
-        <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-display font-bold text-base">Drivers' Championship</h3>
+          <span class="text-[10px] text-zinc-400">Tap ⭐ for 10s Driver Anthem</span>
+        </div>
         <div id="wdc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
@@ -396,7 +415,6 @@
   <div id="track-modal" onclick="if(event.target === this) closeTrackModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
     <div class="animate-modal relative w-full max-w-md rounded-2xl bg-zinc-950/80 backdrop-blur-xl border border-zinc-700/80 shadow-2xl overflow-hidden text-white">
 
-      <!-- Modal Top Header (Matches F1 App Layout) -->
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800/90 bg-zinc-900/50">
         <div>
           <div class="flex items-center gap-2 text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
@@ -416,20 +434,16 @@
         </button>
       </div>
 
-      <!-- Modal Body: High-Res Circuit Map + Telemetry Specs -->
       <div class="p-5 space-y-5 max-h-[82vh] overflow-y-auto">
-        <!-- Circuit Sector & Speed Trap Map Image -->
         <div class="relative bg-black/50 rounded-xl p-3 border border-zinc-800/70 flex items-center justify-center min-h-[190px]">
           <img id="modal-track-img" src="" alt="Circuit Map" class="w-full max-h-56 object-contain drop-shadow-[0_0_14px_rgba(255,255,255,0.15)]" />
         </div>
 
-        <!-- Circuit Length -->
         <div class="border-t border-zinc-800/80 pt-4">
           <span class="text-xs text-zinc-400 block mb-0.5">Circuit Length</span>
           <span id="modal-length" class="font-display font-black text-3xl sm:text-4xl tracking-tight text-white">5.513km</span>
         </div>
 
-        <!-- First GP & Number of Laps -->
         <div class="grid grid-cols-2 gap-4 border-t border-zinc-800/80 pt-4">
           <div>
             <span class="text-xs text-zinc-400 block mb-0.5">First Grand Prix</span>
@@ -441,7 +455,6 @@
           </div>
         </div>
 
-        <!-- Fastest Lap Time & Race Distance -->
         <div class="grid grid-cols-2 gap-4 border-t border-zinc-800/80 pt-4">
           <div>
             <span class="text-xs text-zinc-400 block mb-0.5">Fastest lap time</span>
@@ -464,15 +477,6 @@
     const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
-
-    // Ad-Free Direct Audio Stream Mirrors
-    const ADFREE_PIPED_APIS = [
-      "https://pipedapi.kavin.rocks",
-      "https://pipedapi-libre.kavin.rocks",
-      "https://pipedapi.tokhmi.xyz",
-      "https://pipedapi.syncpundit.io",
-      "https://api.piped.private.coffee"
-    ];
 
     // ================= ALL 24 F1 CIRCUITS TELEMETRY & OFFICIAL SECTOR MAPS =================
     const F1_MEDIA_MAP_BASE = "https://media.formula1.com/image/upload/f_auto,c_limit,w_960,q_auto/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/";
@@ -522,43 +526,41 @@
     let clipCutoffTimer = null;
     let clipProgressInterval = null;
     let pendingStartTimeout = null;
-    let ytAdGuardInterval = null;
-    let pendingYtAnthemLabel = null;
-    let pendingYtSessionId = null;
-    let pendingYtTargetStart = 0;
-
-    const adFreeStreamCache = {};
+    let activeYtAnthem = null;
+    let activeYtLabel = "";
+    let activeYtSession = 0;
+    let usedFallbackVideo = false;
 
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
-    // ================= ALL 20+ DRIVER ANTHEMS (EXACT CHORUS TIMESTAMPS) =================
+    // ================= ALL 20+ DRIVER ANTHEMS (WITH EMBED-SAFE BACKUPS) =================
     const DRIVER_ANTHEMS_MAP = {
-      "antonelli": { videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi Antonelli Anthem" },
+      "antonelli": { videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi, Kimi Antonelli!", fallbackId: "mS41bHNw1WI", fallbackStart: 14 },
       "russell": { videoId: "IMrJ9pD-LG0", start: 1, hook: "George Russell Boss B*tch" },
-      "leclerc": { videoId: "7AS2r2ltlhQ", start: 17, hook: "Charles Leclerc Official Anthem" },
-      "hamilton": { videoId: "QFXs9S9xhbk", start: 16, hook: "Lewis Hamilton #1 Anthem" },
-      "norris": { videoId: "xq0qE1fMlnA", start: 1, hook: "Lando Norris It's Friday" },
-      "piastri": { videoId: "BQUOx7_kuRQ", start: 1, hook: "Oscar Piastri Oh Ohhhhh" },
-      "hadjar": { videoId: "MIR4ss7u-xE", start: 15, hook: "Isack Hadjar Drop" },
-      "lawson": { videoId: "U1epDmZkBaQ", start: 2, hook: "Liam Lawson Anthem" },
-      "gasly": { videoId: "MvR2bBIRumM", start: 3, hook: "Pierre Gasly Pure Gasoline" },
-      "arvid_lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad #1 Anthem" },
-      "lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad #1 Anthem" },
-      "colapinto": { videoId: "-YIWdIQl-i8", start: 13, hook: "Franco Colapinto Argentina Drop" },
-      "bearman": { videoId: "BoEEQDj_2cA", start: 0, hook: "Oliver Bearman El Mago" },
-      "hulkenberg": { videoId: "3T1GqewIbtg", start: 16, hook: "Nico Hülkenberg Drop" },
-      "bortoleto": { videoId: "fJY1PC-K39M", start: 1, hook: "Gabriel Bortoleto Audi Song" },
-      "ocon": { videoId: "9BA3338Tv90", start: 86, hook: "Esteban Ocon Normandy Anthem" },
-      "albon": { videoId: "xfJA-7CsgZM", start: 57, hook: "Alexander Albon Racing to Top" },
-      "tsunoda": { videoId: "1m-H0pHajCo", start: 14, hook: "Yuki Tsunoda Traffic Paradise" },
-      "stroll": { videoId: "sawwJjyFji8", start: 9, hook: "Lance Stroll Daddy's Cash" },
-      "bottas": { videoId: "r7VDQctNyFg", start: 22, hook: "Valtteri Bottas Euro-Dance" },
-      "perez": { videoId: "d8y3QCiI4_0", start: 27, hook: "Sergio Pérez Go Checo" },
-      "verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Max Verstappen Tu-Tu-Du-Du" },
-      "max_verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Max Verstappen Tu-Tu-Du-Du" },
-      "alonso": { videoId: "0Y2PPxrBJt8", start: 36, hook: "Fernando Alonso A-lon-so" },
-      "sainz": { videoId: "YBez2FYTubg", start: 79, hook: "Carlos Sainz Smooth Operator" }
+      "leclerc": { videoId: "7AS2r2ltlhQ", start: 17, hook: "Charles, Charles Leclerc!" },
+      "hamilton": { videoId: "QFXs9S9xhbk", start: 16, hook: "Lewis, Lewis Hamilton!", fallbackId: "7AS2r2ltlhQ", fallbackStart: 17 },
+      "norris": { videoId: "xq0qE1fMlnA", start: 1, hook: "Lando Norris — It's Friday Then!" },
+      "piastri": { videoId: "2xwQeIvK58M", start: 37, hook: "Oscar Piastri King of the Track!" },
+      "hadjar": { videoId: "MIR4ss7u-xE", start: 15, hook: "Isack, Isack Hadjar!" },
+      "lawson": { videoId: "U1epDmZkBaQ", start: 2, hook: "I'm Liam Lawson!" },
+      "gasly": { videoId: "MvR2bBIRumM", start: 3, hook: "Pierre Gasly — Going Full Speed!" },
+      "arvid_lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad Is #1!" },
+      "lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad Is #1!" },
+      "colapinto": { videoId: "-YIWdIQl-i8", start: 13, hook: "Franco Colapinto From Argentina!" },
+      "bearman": { videoId: "BoEEQDj_2cA", start: 0, hook: "Oliver Bearman El Mago Del Motor!" },
+      "hulkenberg": { videoId: "3T1GqewIbtg", start: 16, hook: "Hülkenberg, Hülkenberg!" },
+      "bortoleto": { videoId: "fJY1PC-K39M", start: 1, hook: "Audi, Audi, Audi Bortoleto!" },
+      "ocon": { videoId: "9BA3338Tv90", start: 86, hook: "Esteban Ocon Normandy Anthem!" },
+      "albon": { videoId: "xfJA-7CsgZM", start: 57, hook: "Alexander Albon Racing to the Top!" },
+      "tsunoda": { videoId: "1m-H0pHajCo", start: 14, hook: "Yuki Tsunoda Traffic Paradise!" },
+      "stroll": { videoId: "sawwJjyFji8", start: 9, hook: "Lance Stroll — Daddy's Cash!" },
+      "bottas": { videoId: "r7VDQctNyFg", start: 22, hook: "Valtteri Bottas #77!" },
+      "perez": { videoId: "d8y3QCiI4_0", start: 27, hook: "Sergio Pérez! Go Checo!" },
+      "verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Tu-Tu-Du-Du Max Verstappen!" },
+      "max_verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Tu-Tu-Du-Du Max Verstappen!" },
+      "alonso": { videoId: "0Y2PPxrBJt8", start: 36, hook: "Fernando Alonso! A-lon-so!" },
+      "sainz": { videoId: "YBez2FYTubg", start: 79, hook: "Carlos Sainz Smooth Operator!" }
     };
 
     function resolveDriverAnthem(driverId, driverName) {
@@ -568,37 +570,13 @@
       for (const [k, val] of Object.entries(DRIVER_ANTHEMS_MAP)) {
         if (idLower.includes(k) || nameLower.includes(k)) return val;
       }
-      return { videoId: "mS41bHNw1WI", start: 14, hook: "F1 Anthem" };
-    }
-
-    async function resolveAdFreeAudioUrl(videoId) {
-      if (adFreeStreamCache[videoId]) return adFreeStreamCache[videoId];
-
-      for (const apiBase of ADFREE_PIPED_APIS) {
-        try {
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 1600);
-          const res = await fetch(`${apiBase}/streams/${videoId}`, { signal: ctrl.signal });
-          clearTimeout(tid);
-          if (!res.ok) continue;
-          const data = await res.json();
-          if (Array.isArray(data.audioStreams) && data.audioStreams.length > 0) {
-            const m4a = data.audioStreams.find(s => s.mimeType && s.mimeType.includes("mp4")) || data.audioStreams[0];
-            if (m4a && m4a.url) {
-              adFreeStreamCache[videoId] = m4a.url;
-              return m4a.url;
-            }
-          }
-        } catch (e) {}
-      }
-      return null;
+      return DRIVER_ANTHEMS_MAP["verstappen"];
     }
 
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player("yt-anthem-player", {
-        host: "https://www.youtube-nocookie.com",
-        height: "1",
-        width: "1",
+        height: "200",
+        width: "200",
         playerVars: {
           autoplay: 0,
           controls: 0,
@@ -607,34 +585,33 @@
           iv_load_policy: 3,
           modestbranding: 1,
           playsinline: 1,
-          rel: 0,
-          origin: window.location.origin
+          rel: 0
         },
         events: {
           onReady: () => { ytPlayerReady = true; },
           onStateChange: (event) => {
-            if (event.data === YT.PlayerState.PLAYING) {
-              if (pendingYtSessionId === playbackSessionId) {
-                if (ytAdGuardInterval) clearInterval(ytAdGuardInterval);
-                ytAdGuardInterval = setInterval(() => {
-                  if (pendingYtSessionId !== playbackSessionId || !ytPlayer || typeof ytPlayer.getCurrentTime !== "function") {
-                    clearInterval(ytAdGuardInterval);
-                    return;
-                  }
-                  const cur = ytPlayer.getCurrentTime();
-                  if (pendingYtTargetStart > 2 && cur < pendingYtTargetStart - 1.5) {
-                    ytPlayer.seekTo(pendingYtTargetStart, true);
-                    return;
-                  }
-                  if (pendingYtAnthemLabel) {
-                    const label = pendingYtAnthemLabel;
-                    pendingYtAnthemLabel = null;
-                    startTenSecondCutoff(label, pendingYtSessionId);
-                  }
-                }, 150);
-              }
-            } else if (event.data === YT.PlayerState.ENDED) {
+            if (event.data === YT.PlayerState.PLAYING && activeYtSession === playbackSessionId) {
+              startTenSecondCutoff(activeYtLabel, activeYtSession);
+            } else if (event.data === YT.PlayerState.ENDED && activeYtSession === playbackSessionId) {
               stopAllAudio();
+            }
+          },
+          onError: () => {
+            // If a record-label Topic video restricts embedding (Error 150), play backup or voice synth so it's never silent
+            if (activeYtSession === playbackSessionId && activeYtAnthem) {
+              if (!usedFallbackVideo && activeYtAnthem.fallbackId) {
+                usedFallbackVideo = true;
+                ytPlayer.loadVideoById({
+                  videoId: activeYtAnthem.fallbackId,
+                  startSeconds: activeYtAnthem.fallbackStart || 14
+                });
+                ytPlayer.playVideo();
+              } else if ("speechSynthesis" in window) {
+                startTenSecondCutoff(activeYtLabel, activeYtSession);
+                const utter = new SpeechSynthesisUtterance(activeYtAnthem.hook);
+                utter.rate = 1.08;
+                window.speechSynthesis.speak(utter);
+              }
             }
           }
         }
@@ -697,7 +674,6 @@
 
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
 
-      // Close modal on Escape key
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") closeTrackModal();
       });
@@ -752,14 +728,12 @@
       const specs = getCircuitTelemetry(race);
       const mapUrl = `${F1_MEDIA_MAP_BASE}${specs.mapSlug}`;
 
-      // Update Hero Mini Map
       const heroImg = document.getElementById("hero-track-img");
       if (heroImg) {
         heroImg.src = mapUrl;
         heroImg.alt = `${race.raceName} Track Map`;
       }
 
-      // Populate Translucent Popup Modal
       document.getElementById("modal-round").textContent = `R${race.round}`;
       document.getElementById("modal-dates").textContent = formatWeekendDateRange(race);
       document.getElementById("modal-flag").textContent = specs.flag;
@@ -787,23 +761,25 @@
       modal.classList.remove("flex");
     }
 
-    // ================= AUDIO ENGINE (AD-FREE + 10S ANTHEM CUTOFF) =================
+    // ================= SYNCHRONOUS ZERO-DELAY AUDIO ENGINE =================
     function clearAudioTimers() {
       if (pendingStartTimeout) { clearTimeout(pendingStartTimeout); pendingStartTimeout = null; }
       if (clipCutoffTimer) { clearTimeout(clipCutoffTimer); clipCutoffTimer = null; }
       if (clipProgressInterval) { clearInterval(clipProgressInterval); clipProgressInterval = null; }
-      if (ytAdGuardInterval) { clearInterval(ytAdGuardInterval); ytAdGuardInterval = null; }
+
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
+      const floatBar = document.getElementById("floating-audio-progress");
       if (bar) bar.style.width = "0%";
+      if (floatBar) floatBar.style.width = "0%";
       if (timerTxt) timerTxt.textContent = "STANDBY";
     }
 
     function stopAllAudio() {
       playbackSessionId++;
-      pendingYtAnthemLabel = null;
-      pendingYtSessionId = null;
-      pendingYtTargetStart = 0;
+      activeYtAnthem = null;
+      activeYtSession = 0;
+      usedFallbackVideo = false;
       clearAudioTimers();
 
       if (currentRadioAudio) {
@@ -811,7 +787,6 @@
           currentRadioAudio.onended = null;
           currentRadioAudio.onerror = null;
           currentRadioAudio.ontimeupdate = null;
-          currentRadioAudio.onplaying = null;
           currentRadioAudio.pause();
           currentRadioAudio.src = "";
         } catch (e) {}
@@ -830,6 +805,20 @@
       if (transcriptEl) {
         transcriptEl.innerHTML = `[PITWALL AUDIO STANDBY — TAP ⭐ NEXT TO ANY DRIVER IN STANDINGS]`;
       }
+      const floatingToast = document.getElementById("floating-audio-bar");
+      if (floatingToast) floatingToast.classList.add("hidden");
+    }
+
+    function showFloatingAudioToast(labelHtml, timerStr, pct) {
+      const toast = document.getElementById("floating-audio-bar");
+      const titleEl = document.getElementById("floating-audio-title");
+      const timerEl = document.getElementById("floating-audio-timer");
+      const progEl = document.getElementById("floating-audio-progress");
+
+      if (toast) toast.classList.remove("hidden");
+      if (titleEl) titleEl.innerHTML = labelHtml;
+      if (timerEl) timerEl.textContent = timerStr;
+      if (progEl) progEl.style.width = `${pct}%`;
     }
 
     function startTenSecondCutoff(labelHtml, sessionToken) {
@@ -841,12 +830,14 @@
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
 
-      transcriptEl.innerHTML = `
+      const formattedHtml = `
         <span class="inline-flex items-center mr-1.5">
           <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
         </span>
         <span>${labelHtml}</span>
       `;
+      if (transcriptEl) transcriptEl.innerHTML = formattedHtml;
+      showFloatingAudioToast(formattedHtml, "10.0s left", 0);
 
       const startTime = Date.now();
       clipProgressInterval = setInterval(() => {
@@ -859,6 +850,7 @@
         const remaining = Math.max(0, (MAX_CLIP_DURATION_MS - elapsed) / 1000).toFixed(1);
         if (bar) bar.style.width = `${pct}%`;
         if (timerTxt) timerTxt.textContent = `${remaining}s left`;
+        showFloatingAudioToast(formattedHtml, `${remaining}s left`, pct);
       }, 100);
 
       clipCutoffTimer = setTimeout(() => {
@@ -869,7 +861,8 @@
       }, MAX_CLIP_DURATION_MS);
     }
 
-    async function playDriverAnthem(driverId, driverName) {
+    // Synchronous trigger inside the user click event so Mobile Chrome NEVER blocks audio!
+    function playDriverAnthem(driverId, driverName) {
       stopAllAudio();
       const mySession = playbackSessionId;
       playPitwallBeep();
@@ -877,54 +870,23 @@
       const anthem = resolveDriverAnthem(driverId, driverName);
       const labelText = `🎵 ${driverName}: "${anthem.hook}"`;
 
-      const transcriptEl = document.getElementById("radio-transcript");
-      transcriptEl.innerHTML = `⏳ Loading Ad-Free ${driverName} Anthem...`;
+      activeYtAnthem = anthem;
+      activeYtLabel = labelText;
+      activeYtSession = mySession;
+      usedFallbackVideo = false;
 
-      const directAudioUrl = await resolveAdFreeAudioUrl(anthem.videoId);
-      if (mySession !== playbackSessionId) return;
-
-      if (directAudioUrl) {
-        try {
-          const audio = new Audio(directAudioUrl);
-          currentRadioAudio = audio;
-          audio.currentTime = anthem.start || 0;
-
-          audio.onplaying = () => {
-            if (mySession === playbackSessionId) {
-              startTenSecondCutoff(labelText, mySession);
-            }
-          };
-
-          audio.onerror = () => {
-            if (mySession === playbackSessionId) {
-              playFallbackNoCookieYouTube(anthem, labelText, mySession);
-            }
-          };
-
-          await audio.play();
-          return;
-        } catch (err) {}
-      }
-
-      playFallbackNoCookieYouTube(anthem, labelText, mySession);
-    }
-
-    function playFallbackNoCookieYouTube(anthem, labelText, mySession) {
-      if (mySession !== playbackSessionId) return;
-      const transcriptEl = document.getElementById("radio-transcript");
+      showFloatingAudioToast(`⏳ Loading ${labelText}...`, "10.0s", 0);
 
       if (ytPlayer && ytPlayerReady && typeof ytPlayer.loadVideoById === "function") {
-        pendingYtSessionId = mySession;
-        pendingYtAnthemLabel = labelText;
-        pendingYtTargetStart = anthem.start || 0;
-
+        ytPlayer.unMute();
+        ytPlayer.setVolume(100);
         ytPlayer.loadVideoById({
           videoId: anthem.videoId,
-          startSeconds: anthem.start
+          startSeconds: anthem.start || 0
         });
         ytPlayer.playVideo();
       } else {
-        transcriptEl.innerHTML = `⚠️ Audio engine loading—try starring ${anthem.hook} again.`;
+        showFloatingAudioToast(`⚠️ Audio engine initializing—tap ⭐ on ${driverName} again!`, "WAIT", 0);
       }
     }
 
@@ -951,7 +913,6 @@
     // ================= CALENDAR, AUTO NEXT-RACE ROLLOVER & WEATHER =================
     function findNextUpcomingRace(races) {
       const now = new Date();
-      // Keep current race on hoarding until 2 hours after Lights Out (when GP finishes), then auto-advance to next GP
       const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
       return races.find(r => {
         const lightsOut = new Date(`${r.date}T${r.time || '14:00:00Z'}`);
@@ -982,7 +943,6 @@
       document.getElementById("race-name").textContent = race.raceName;
       document.getElementById("race-circuit").textContent = `${race.Circuit.circuitName} — ${race.Circuit.Location.locality}, ${race.Circuit.Location.country}`;
 
-      // Sync Mini Track Map + Translucent Popup Data for this race
       updateTrackMapAndModalUI(race);
 
       const sessions = [];
@@ -1085,7 +1045,6 @@
         const now = new Date();
         const diff = targetDate - now;
 
-        // If race finished (2 hours past lights out), automatically roll hoarding over to the next Grand Prix!
         if (diff < -TWO_HOURS_MS && seasonRaces.length > 0) {
           const nextUp = findNextUpcomingRace(seasonRaces);
           if (nextUp && selectedRace && nextUp.round !== selectedRace.round) {
@@ -1147,6 +1106,7 @@
       document.getElementById("wdc-list").innerHTML = driversList.map(d => {
         const fullName = `${d.Driver.givenName} ${d.Driver.familyName}`;
         const driverId = d.Driver.driverId;
+        const safeName = fullName.replace(/'/g, "\\'");
         return `
           <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 gap-2">
             <div class="min-w-0 truncate">
@@ -1156,7 +1116,7 @@
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <span class="font-mono font-bold theme-accent-text">${d.points} PTS</span>
-              <button onclick="onStarDriverClicked('${driverId}', '${fullName}')" title="Pin Driver & Play Anthem" class="hover:scale-125 transition text-base">⭐</button>
+              <button onclick="onStarDriverClicked('${driverId}', '${safeName}')" title="Pin Driver & Play Anthem" class="hover:scale-125 active:scale-95 transition text-base px-1">⭐</button>
             </div>
           </div>
         `;
@@ -1174,7 +1134,7 @@
     }
 
     function onStarDriverClicked(driverId, fullName) {
-      pinDriver(`${fullName} (Starred)`);
+      pinDriver(`${fullName}`);
       playDriverAnthem(driverId, fullName);
     }
 
@@ -1444,13 +1404,15 @@
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
 
-      transcriptEl.innerHTML = `
+      const formattedHtml = `
         <span class="inline-flex items-center mr-1.5">
           <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
         </span>
         <span>🎙️ LIVE CAR RADIO: ${label}</span>
       `;
+      if (transcriptEl) transcriptEl.innerHTML = formattedHtml;
       if (timerTxt) timerTxt.textContent = "FULL CLIP";
+      showFloatingAudioToast(formattedHtml, "LIVE", 0);
 
       pendingStartTimeout = setTimeout(() => {
         if (mySession !== playbackSessionId) return;
@@ -1464,6 +1426,7 @@
             const remaining = Math.max(0, audio.duration - audio.currentTime).toFixed(1);
             if (bar) bar.style.width = `${pct}%`;
             if (timerTxt) timerTxt.textContent = `${remaining}s left`;
+            showFloatingAudioToast(formattedHtml, `${remaining}s left`, pct);
           }
         };
 
@@ -1476,10 +1439,10 @@
 
         audio.play().catch(() => {
           if (mySession === playbackSessionId) {
-            transcriptEl.innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
+            showFloatingAudioToast(`⚠️ Stream unavailable for ${label}`, "ERR", 0);
           }
         });
-      }, 180);
+      }, 100);
     }
 
     function pinDriver(info) {
