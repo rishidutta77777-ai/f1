@@ -1,0 +1,19 @@
+{
+  "name": "F1 Pitwall Pro | Telemetry & Weekend Hub",
+  "short_name": "F1 Pitwall",
+  "description": "Live Formula 1 Telemetry, Weather Radar, H2H & Team Radio Hub",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#0b0f19",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230b0f19'/><rect x='24' y='24' width='464' height='464' rx='95' fill='none' stroke='%23ef4444' stroke-width='20'/><path d='M90 190 L230 190 L200 245 L145 245 L135 270 L210 270 L185 320 L115 320 L90 375 L45 375 Z' fill='%23ef4444'/><path d='M255 190 L335 190 L265 375 L205 375 Z' fill='%23ffffff'/><text x='256' y='445' font-family='sans-serif' font-weight='900' font-size='54' fill='%23facc15' text-anchor='middle' letter-spacing='6'>PITWALL</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
