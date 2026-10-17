@@ -392,22 +392,25 @@
     let clipCutoffTimer = null;
     let clipProgressInterval = null;
     let pendingStartTimeout = null;
+    let pendingYtAnthemLabel = null;
+    let pendingYtSessionId = null;
 
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
-    // ================= ALL 20 DRIVER ANTHEMS (EXACT CHORUS TIMESTAMPS) =================
+    // ================= ALL 20+ DRIVER ANTHEMS (EXACT CHORUS TIMESTAMPS) =================
     const DRIVER_ANTHEMS_MAP = {
       "antonelli": { videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi Antonelli Anthem" },
       "russell": { videoId: "IMrJ9pD-LG0", start: 1, hook: "George Russell Boss B*tch" },
       "leclerc": { videoId: "7AS2r2ltlhQ", start: 17, hook: "Charles Leclerc Official Anthem" },
       "hamilton": { videoId: "QFXs9S9xhbk", start: 16, hook: "Lewis Hamilton #1 Anthem" },
       "norris": { videoId: "xq0qE1fMlnA", start: 1, hook: "Lando Norris It's Friday" },
-      "piastri": { videoId: "2xwQeIvK58M", start: 37, hook: "Oscar Piastri King of Track" },
+      "piastri": { videoId: "BQUOx7_kuRQ", start: 1, hook: "Oscar Piastri Oh Ohhhhh" },
       "hadjar": { videoId: "MIR4ss7u-xE", start: 15, hook: "Isack Hadjar Drop" },
       "lawson": { videoId: "U1epDmZkBaQ", start: 2, hook: "Liam Lawson Anthem" },
       "gasly": { videoId: "MvR2bBIRumM", start: 3, hook: "Pierre Gasly Pure Gasoline" },
-      "lindblad": { videoId: "OGk59GC9X1A" , start: 7, hook: "Arvid Lindblad Anthem" },
+      "arvid_lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad #1 Anthem" },
+      "lindblad": { videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad #1 Anthem" },
       "colapinto": { videoId: "-YIWdIQl-i8", start: 13, hook: "Franco Colapinto Argentina Drop" },
       "bearman": { videoId: "BoEEQDj_2cA", start: 0, hook: "Oliver Bearman El Mago" },
       "hulkenberg": { videoId: "3T1GqewIbtg", start: 16, hook: "Nico Hülkenberg Drop" },
@@ -419,9 +422,20 @@
       "bottas": { videoId: "r7VDQctNyFg", start: 22, hook: "Valtteri Bottas Euro-Dance" },
       "perez": { videoId: "d8y3QCiI4_0", start: 27, hook: "Sergio Pérez Go Checo" },
       "verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Max Verstappen Tu-Tu-Du-Du" },
+      "max_verstappen": { videoId: "mS41bHNw1WI", start: 14, hook: "Max Verstappen Tu-Tu-Du-Du" },
       "alonso": { videoId: "0Y2PPxrBJt8", start: 36, hook: "Fernando Alonso A-lon-so" },
-      "sainz": { videoId: "YBez2FYTubg", start: 15, hook: "Carlos Sainz Smooth Operator" }
+      "sainz": { videoId: "YBez2FYTubg", start: 79, hook: "Carlos Sainz Smooth Operator" }
     };
+
+    function resolveDriverAnthem(driverId, driverName) {
+      const idLower = (driverId || "").toLowerCase();
+      const nameLower = (driverName || "").toLowerCase();
+      if (DRIVER_ANTHEMS_MAP[idLower]) return DRIVER_ANTHEMS_MAP[idLower];
+      for (const [k, val] of Object.entries(DRIVER_ANTHEMS_MAP)) {
+        if (idLower.includes(k) || nameLower.includes(k)) return val;
+      }
+      return { videoId: "mS41bHNw1WI", start: 14, hook: "F1 Anthem" };
+    }
 
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player("yt-anthem-player", {
@@ -432,7 +446,12 @@
           onReady: () => { ytPlayerReady = true; },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
-              // Trigger 10s cutoff timer
+              // Start the exact 10-second timer once audio actually begins playing
+              if (pendingYtSessionId === playbackSessionId && pendingYtAnthemLabel) {
+                const label = pendingYtAnthemLabel;
+                pendingYtAnthemLabel = null;
+                startTenSecondCutoff(label, pendingYtSessionId);
+              }
             } else if (event.data === YT.PlayerState.ENDED) {
               stopAllAudio();
             }
@@ -529,6 +548,8 @@
 
     function stopAllAudio() {
       playbackSessionId++;
+      pendingYtAnthemLabel = null;
+      pendingYtSessionId = null;
       clearAudioTimers();
 
       if (currentRadioAudio) {
@@ -596,20 +617,20 @@
       const mySession = playbackSessionId;
       playPitwallBeep();
 
-      const key = driverId.toLowerCase();
-      const anthem = DRIVER_ANTHEMS_MAP[key] || { videoId: "mS41bHNw1WI", start: 14, hook: "F1 Anthem" };
+      const anthem = resolveDriverAnthem(driverId, driverName);
 
       const transcriptEl = document.getElementById("radio-transcript");
       transcriptEl.innerHTML = `⏳ Loading ${driverName} Anthem...`;
 
       if (ytPlayer && ytPlayerReady && typeof ytPlayer.loadVideoById === "function") {
+        pendingYtSessionId = mySession;
+        pendingYtAnthemLabel = `🎵 ${driverName}: "${anthem.hook}"`;
+
         ytPlayer.loadVideoById({
           videoId: anthem.videoId,
-          startSeconds: anthem.start,
-          endSeconds: anthem.start + 10
+          startSeconds: anthem.start
         });
         ytPlayer.playVideo();
-        startTenSecondCutoff(`🎵 ${driverName}: "${anthem.hook}"`, mySession);
       } else {
         transcriptEl.innerHTML = `⚠️ Audio engine loading—try starring ${driverName} again.`;
       }
@@ -806,7 +827,7 @@
     function renderStandings() {
       document.getElementById("wdc-list").innerHTML = driversList.map(d => {
         const fullName = `${d.Driver.givenName} ${d.Driver.familyName}`;
-        const driverId = d.Driver.driverId; // e.g. "verstappen", "hamilton", "leclerc"
+        const driverId = d.Driver.driverId; // e.g. "verstappen", "arvid_lindblad", "piastri"
         return `
           <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 gap-2">
             <div class="min-w-0 truncate">
