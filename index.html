@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -100,6 +99,15 @@
     }
     .eq-bar:nth-child(2) { animation-delay: 0.2s; }
     .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Translucent Modal Animation */
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.94) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-modal {
+      animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
@@ -143,27 +151,42 @@
 
   <main class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-5">
 
-    <!-- Next Race Hero & Countdown -->
+    <!-- Next Race Hero Hoarding + Interactive Mini Track Map & Countdown -->
     <section class="relative overflow-hidden rounded-2xl theme-hero border border-zinc-800 p-4 sm:p-5 md:p-7 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-5">
-        <div class="w-full md:w-auto">
-          <div class="flex flex-wrap items-center gap-2">
-            <span id="race-round" class="text-[11px] font-bold uppercase tracking-widest theme-sec-text bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-700">
-              Loading Season...
-            </span>
-            <button id="pwa-install-btn" class="text-[11px] bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-full border border-emerald-400/40 shadow transition">
-              📲 Install App
-            </button>
+      <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 sm:gap-5">
+        
+        <!-- Left Side: Race Info + Mini Track Map Beside It -->
+        <div class="flex flex-row items-center justify-between gap-3 sm:gap-5 flex-1 min-w-0">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="race-round" class="text-[11px] font-bold uppercase tracking-widest theme-sec-text bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-700">
+                Loading Season...
+              </span>
+              <button id="pwa-install-btn" class="text-[11px] bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-full border border-emerald-400/40 shadow transition">
+                📲 Install App
+              </button>
+            </div>
+            <h2 id="race-name" class="font-display text-xl sm:text-2xl md:text-4xl font-black mt-3 break-words leading-tight">
+              Fetching Next Grand Prix...
+            </h2>
+            <p id="race-circuit" class="text-zinc-400 text-xs md:text-sm mt-1 truncate">
+              Connecting to Jolpica F1 & Open-Meteo Telemetry...
+            </p>
           </div>
-          <h2 id="race-name" class="font-display text-xl sm:text-2xl md:text-4xl font-black mt-3 break-words">
-            Fetching Next Grand Prix...
-          </h2>
-          <p id="race-circuit" class="text-zinc-400 text-xs md:text-sm mt-1">
-            Connecting to Jolpica F1 & Open-Meteo Telemetry...
-          </p>
+
+          <!-- Interactive Mini Circuit Map Button -->
+          <button onclick="openTrackModal()" type="button" class="group shrink-0 bg-zinc-950/75 hover:bg-zinc-900/90 active:scale-95 border border-zinc-700/80 hover:border-red-500/70 rounded-xl p-2 sm:p-2.5 flex flex-col items-center justify-center transition shadow-lg cursor-pointer" title="Tap on the map to know details">
+            <div class="w-20 h-14 sm:w-28 sm:h-20 flex items-center justify-center overflow-hidden">
+              <img id="hero-track-img" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_960,q_auto/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/USA_Circuit" alt="Track Map" class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
+            </div>
+            <span class="text-[9px] sm:text-[10px] text-zinc-300 group-hover:theme-sec-text font-semibold tracking-wide mt-1 flex items-center gap-1 whitespace-nowrap">
+              🔍 Tap on map for details
+            </span>
+          </button>
         </div>
 
-        <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-3.5 w-full md:w-auto text-center shadow-inner">
+        <!-- Right Side: Lights Out Countdown -->
+        <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-3.5 w-full lg:w-auto text-center shadow-inner shrink-0">
           <p class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5">Lights Out Countdown</p>
           <div id="countdown" class="font-display text-xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
             <div><span id="cd-days">00</span><span class="block text-[9px] text-zinc-500">DAYS</span></div>
@@ -175,6 +198,7 @@
             <div><span id="cd-secs" class="theme-accent-text">00</span><span class="block text-[9px] text-zinc-500">SECS</span></div>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -368,6 +392,72 @@
 
   </main>
 
+  <!-- ================= TRANSLUCENT CIRCUIT TELEMETRY POPUP MODAL ================= -->
+  <div id="track-modal" onclick="if(event.target === this) closeTrackModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
+    <div class="animate-modal relative w-full max-w-md rounded-2xl bg-zinc-950/80 backdrop-blur-xl border border-zinc-700/80 shadow-2xl overflow-hidden text-white">
+
+      <!-- Modal Top Header (Matches F1 App Layout) -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800/90 bg-zinc-900/50">
+        <div>
+          <div class="flex items-center gap-2 text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
+            <span id="modal-round">R18</span>
+            <span class="text-zinc-600">|</span>
+            <span id="modal-dates">23 – 26 OCT</span>
+          </div>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span id="modal-flag" class="text-lg">🇺🇸</span>
+            <h3 id="modal-country" class="font-display font-black text-lg sm:text-xl tracking-wide text-white">United States</h3>
+            <span class="text-zinc-500 text-sm font-bold">›</span>
+          </div>
+        </div>
+
+        <button onclick="closeTrackModal()" class="w-8 h-8 rounded-full bg-zinc-800/80 hover:bg-red-600 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Body: High-Res Circuit Map + Telemetry Specs -->
+      <div class="p-5 space-y-5 max-h-[82vh] overflow-y-auto">
+        <!-- Circuit Sector & Speed Trap Map Image -->
+        <div class="relative bg-black/50 rounded-xl p-3 border border-zinc-800/70 flex items-center justify-center min-h-[190px]">
+          <img id="modal-track-img" src="" alt="Circuit Map" class="w-full max-h-56 object-contain drop-shadow-[0_0_14px_rgba(255,255,255,0.15)]" />
+        </div>
+
+        <!-- Circuit Length -->
+        <div class="border-t border-zinc-800/80 pt-4">
+          <span class="text-xs text-zinc-400 block mb-0.5">Circuit Length</span>
+          <span id="modal-length" class="font-display font-black text-3xl sm:text-4xl tracking-tight text-white">5.513km</span>
+        </div>
+
+        <!-- First GP & Number of Laps -->
+        <div class="grid grid-cols-2 gap-4 border-t border-zinc-800/80 pt-4">
+          <div>
+            <span class="text-xs text-zinc-400 block mb-0.5">First Grand Prix</span>
+            <span id="modal-first-gp" class="font-display font-black text-xl sm:text-2xl text-white">2012</span>
+          </div>
+          <div>
+            <span class="text-xs text-zinc-400 block mb-0.5">Number of Laps</span>
+            <span id="modal-laps" class="font-display font-black text-xl sm:text-2xl text-white">56</span>
+          </div>
+        </div>
+
+        <!-- Fastest Lap Time & Race Distance -->
+        <div class="grid grid-cols-2 gap-4 border-t border-zinc-800/80 pt-4">
+          <div>
+            <span class="text-xs text-zinc-400 block mb-0.5">Fastest lap time</span>
+            <span id="modal-fastest-lap" class="font-display font-black text-lg sm:text-xl text-white block">1:36.169</span>
+            <span id="modal-fastest-driver" class="text-[11px] text-zinc-400 mt-0.5 block">Charles Leclerc (2019)</span>
+          </div>
+          <div>
+            <span class="text-xs text-zinc-400 block mb-0.5">Race Distance</span>
+            <span id="modal-distance" class="font-display font-black text-lg sm:text-xl text-white block">308.405km</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
@@ -375,7 +465,7 @@
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
 
-    // Ad-Free Direct Audio Stream Mirrors (Piped / Invidious APIs)
+    // Ad-Free Direct Audio Stream Mirrors
     const ADFREE_PIPED_APIS = [
       "https://pipedapi.kavin.rocks",
       "https://pipedapi-libre.kavin.rocks",
@@ -383,6 +473,36 @@
       "https://pipedapi.syncpundit.io",
       "https://api.piped.private.coffee"
     ];
+
+    // ================= ALL 24 F1 CIRCUITS TELEMETRY & OFFICIAL SECTOR MAPS =================
+    const F1_MEDIA_MAP_BASE = "https://media.formula1.com/image/upload/f_auto,c_limit,w_960,q_auto/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/";
+
+    const CIRCUIT_SPECS_DB = {
+      "albert_park": { country: "Australia", flag: "🇦🇺", mapSlug: "Australia_Circuit", length: "5.278km", firstGp: "1996", laps: "58", distance: "306.124km", lapRecord: "1:19.813", recordHolder: "Charles Leclerc (2024)" },
+      "shanghai": { country: "China", flag: "🇨🇳", mapSlug: "China_Circuit", length: "5.451km", firstGp: "2004", laps: "56", distance: "305.066km", lapRecord: "1:32.238", recordHolder: "Michael Schumacher (2004)" },
+      "suzuka": { country: "Japan", flag: "🇯🇵", mapSlug: "Japan_Circuit", length: "5.807km", firstGp: "1987", laps: "53", distance: "307.471km", lapRecord: "1:30.983", recordHolder: "Lewis Hamilton (2019)" },
+      "bahrain": { country: "Bahrain", flag: "🇧🇭", mapSlug: "Bahrain_Circuit", length: "5.412km", firstGp: "2004", laps: "57", distance: "308.238km", lapRecord: "1:31.447", recordHolder: "Pedro de la Rosa (2005)" },
+      "jeddah": { country: "Saudi Arabia", flag: "🇸🇦", mapSlug: "Saudi_Arabia_Circuit", length: "6.174km", firstGp: "2021", laps: "50", distance: "308.450km", lapRecord: "1:30.734", recordHolder: "Lewis Hamilton (2021)" },
+      "miami": { country: "Miami", flag: "🇺🇸", mapSlug: "Miami_Circuit", length: "5.412km", firstGp: "2022", laps: "57", distance: "308.326km", lapRecord: "1:29.708", recordHolder: "Max Verstappen (2023)" },
+      "imola": { country: "Emilia Romagna", flag: "🇮🇹", mapSlug: "Emilia_Romagna_Circuit", length: "4.909km", firstGp: "1980", laps: "63", distance: "309.049km", lapRecord: "1:15.484", recordHolder: "Lewis Hamilton (2020)" },
+      "monaco": { country: "Monaco", flag: "🇲🇨", mapSlug: "Monaco_Circuit", length: "3.337km", firstGp: "1950", laps: "78", distance: "260.286km", lapRecord: "1:12.909", recordHolder: "Lewis Hamilton (2021)" },
+      "villeneuve": { country: "Canada", flag: "🇨🇦", mapSlug: "Canada_Circuit", length: "4.361km", firstGp: "1978", laps: "70", distance: "305.270km", lapRecord: "1:13.078", recordHolder: "Valtteri Bottas (2019)" },
+      "catalunya": { country: "Spain", flag: "🇪🇸", mapSlug: "Spain_Circuit", length: "4.657km", firstGp: "1991", laps: "66", distance: "307.236km", lapRecord: "1:16.330", recordHolder: "Max Verstappen (2023)" },
+      "red_bull_ring": { country: "Austria", flag: "🇦🇹", mapSlug: "Austria_Circuit", length: "4.318km", firstGp: "1970", laps: "71", distance: "306.452km", lapRecord: "1:05.619", recordHolder: "Carlos Sainz (2020)" },
+      "silverstone": { country: "Great Britain", flag: "🇬🇧", mapSlug: "Great_Britain_Circuit", length: "5.891km", firstGp: "1950", laps: "52", distance: "306.198km", lapRecord: "1:27.097", recordHolder: "Max Verstappen (2020)" },
+      "hungaroring": { country: "Hungary", flag: "🇭🇺", mapSlug: "Hungary_Circuit", length: "4.381km", firstGp: "1986", laps: "70", distance: "306.630km", lapRecord: "1:16.627", recordHolder: "Lewis Hamilton (2020)" },
+      "spa": { country: "Belgium", flag: "🇧🇪", mapSlug: "Belgium_Circuit", length: "7.004km", firstGp: "1950", laps: "44", distance: "308.052km", lapRecord: "1:44.701", recordHolder: "Sergio Pérez (2024)" },
+      "zandvoort": { country: "Netherlands", flag: "🇳🇱", mapSlug: "Netherlands_Circuit", length: "4.259km", firstGp: "1952", laps: "72", distance: "306.587km", lapRecord: "1:11.097", recordHolder: "Lewis Hamilton (2021)" },
+      "monza": { country: "Italy", flag: "🇮🇹", mapSlug: "Italy_Circuit", length: "5.793km", firstGp: "1950", laps: "53", distance: "306.720km", lapRecord: "1:21.046", recordHolder: "Rubens Barrichello (2004)" },
+      "baku": { country: "Azerbaijan", flag: "🇦🇿", mapSlug: "Baku_Circuit", length: "6.003km", firstGp: "2016", laps: "51", distance: "306.049km", lapRecord: "1:43.009", recordHolder: "Charles Leclerc (2019)" },
+      "marina_bay": { country: "Singapore", flag: "🇸🇬", mapSlug: "Singapore_Circuit", length: "4.940km", firstGp: "2008", laps: "62", distance: "306.143km", lapRecord: "1:34.486", recordHolder: "Daniel Ricciardo (2024)" },
+      "americas": { country: "United States", flag: "🇺🇸", mapSlug: "USA_Circuit", length: "5.513km", firstGp: "2012", laps: "56", distance: "308.405km", lapRecord: "1:36.169", recordHolder: "Charles Leclerc (2019)" },
+      "rodriguez": { country: "Mexico", flag: "🇲🇽", mapSlug: "Mexico_Circuit", length: "4.304km", firstGp: "1963", laps: "71", distance: "305.354km", lapRecord: "1:17.774", recordHolder: "Valtteri Bottas (2021)" },
+      "interlagos": { country: "Brazil", flag: "🇧🇷", mapSlug: "Brazil_Circuit", length: "4.309km", firstGp: "1973", laps: "71", distance: "305.879km", lapRecord: "1:10.540", recordHolder: "Valtteri Bottas (2018)" },
+      "vegas": { country: "Las Vegas", flag: "🇺🇸", mapSlug: "Las_Vegas_Circuit", length: "6.201km", firstGp: "2023", laps: "50", distance: "309.958km", lapRecord: "1:34.876", recordHolder: "Lando Norris (2024)" },
+      "losail": { country: "Qatar", flag: "🇶🇦", mapSlug: "Qatar_Circuit", length: "5.419km", firstGp: "2021", laps: "57", distance: "308.611km", lapRecord: "1:22.384", recordHolder: "Lando Norris (2024)" },
+      "yas_marina": { country: "Abu Dhabi", flag: "🇦🇪", mapSlug: "Abu_Dhabi_Circuit", length: "5.281km", firstGp: "2009", laps: "58", distance: "306.183km", lapRecord: "1:26.103", recordHolder: "Max Verstappen (2021)" }
+    };
 
     let seasonRaces = [];
     let selectedRace = null;
@@ -451,7 +571,6 @@
       return { videoId: "mS41bHNw1WI", start: 14, hook: "F1 Anthem" };
     }
 
-    // Resolves direct ad-free audio stream URL from a YouTube videoId
     async function resolveAdFreeAudioUrl(videoId) {
       if (adFreeStreamCache[videoId]) return adFreeStreamCache[videoId];
 
@@ -496,7 +615,6 @@
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
               if (pendingYtSessionId === playbackSessionId) {
-                // Ad-Skipper Guard: Ensure player is at target chorus timestamp and not playing an ad at 0:00
                 if (ytAdGuardInterval) clearInterval(ytAdGuardInterval);
                 ytAdGuardInterval = setInterval(() => {
                   if (pendingYtSessionId !== playbackSessionId || !ytPlayer || typeof ytPlayer.getCurrentTime !== "function") {
@@ -505,7 +623,6 @@
                   }
                   const cur = ytPlayer.getCurrentTime();
                   if (pendingYtTargetStart > 2 && cur < pendingYtTargetStart - 1.5) {
-                    // Instantly skip pre-roll ad and jump straight to the song's chorus
                     ytPlayer.seekTo(pendingYtTargetStart, true);
                     return;
                   }
@@ -580,6 +697,11 @@
 
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
 
+      // Close modal on Escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeTrackModal();
+      });
+
       setInterval(() => {
         if (selectedRace) {
           fetchTrackWeather(selectedRace.Circuit.Location.lat, selectedRace.Circuit.Location.long);
@@ -597,6 +719,72 @@
         document.body.setAttribute("data-theme", e.target.value);
         localStorage.setItem("f1_theme", e.target.value);
       });
+    }
+
+    // ================= CIRCUIT TELEMETRY LOOKUP & MODAL LOGIC =================
+    function getCircuitTelemetry(race) {
+      const cid = (race?.Circuit?.circuitId || "").toLowerCase();
+      if (CIRCUIT_SPECS_DB[cid]) return CIRCUIT_SPECS_DB[cid];
+
+      for (const [key, specs] of Object.entries(CIRCUIT_SPECS_DB)) {
+        if (cid.includes(key) || (race?.Circuit?.Location?.country || "").toLowerCase().includes(specs.country.toLowerCase())) {
+          return specs;
+        }
+      }
+      return CIRCUIT_SPECS_DB["americas"];
+    }
+
+    function formatWeekendDateRange(race) {
+      const gpDate = new Date(`${race.date}T${race.time || '14:00:00Z'}`);
+      const fp1DateStr = race.FirstPractice?.date || race.date;
+      const startDate = new Date(`${fp1DateStr}T00:00:00Z`);
+
+      const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      const d1 = String(startDate.getUTCDate()).padStart(2, "0");
+      const d2 = String(gpDate.getUTCDate()).padStart(2, "0");
+      const m1 = months[startDate.getUTCMonth()];
+      const m2 = months[gpDate.getUTCMonth()];
+
+      return m1 === m2 ? `${d1} – ${d2} ${m2}` : `${d1} ${m1} – ${d2} ${m2}`;
+    }
+
+    function updateTrackMapAndModalUI(race) {
+      const specs = getCircuitTelemetry(race);
+      const mapUrl = `${F1_MEDIA_MAP_BASE}${specs.mapSlug}`;
+
+      // Update Hero Mini Map
+      const heroImg = document.getElementById("hero-track-img");
+      if (heroImg) {
+        heroImg.src = mapUrl;
+        heroImg.alt = `${race.raceName} Track Map`;
+      }
+
+      // Populate Translucent Popup Modal
+      document.getElementById("modal-round").textContent = `R${race.round}`;
+      document.getElementById("modal-dates").textContent = formatWeekendDateRange(race);
+      document.getElementById("modal-flag").textContent = specs.flag;
+      document.getElementById("modal-country").textContent = specs.country;
+      document.getElementById("modal-track-img").src = mapUrl;
+      document.getElementById("modal-length").textContent = specs.length;
+      document.getElementById("modal-first-gp").textContent = specs.firstGp;
+      document.getElementById("modal-laps").textContent = specs.laps;
+      document.getElementById("modal-fastest-lap").textContent = specs.lapRecord;
+      document.getElementById("modal-fastest-driver").textContent = specs.recordHolder;
+      document.getElementById("modal-distance").textContent = specs.distance;
+    }
+
+    function openTrackModal() {
+      if (selectedRace) updateTrackMapAndModalUI(selectedRace);
+      playPitwallBeep();
+      const modal = document.getElementById("track-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeTrackModal() {
+      const modal = document.getElementById("track-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
     }
 
     // ================= AUDIO ENGINE (AD-FREE + 10S ANTHEM CUTOFF) =================
@@ -644,7 +832,6 @@
       }
     }
 
-    // Strictly 10-second cutoff for Driver Anthems (and FIA TTS)
     function startTenSecondCutoff(labelHtml, sessionToken) {
       if (sessionToken !== playbackSessionId) return;
       if (clipCutoffTimer) clearTimeout(clipCutoffTimer);
@@ -693,7 +880,6 @@
       const transcriptEl = document.getElementById("radio-transcript");
       transcriptEl.innerHTML = `⏳ Loading Ad-Free ${driverName} Anthem...`;
 
-      // Layer 1: Try Direct Ad-Free Audio Stream Extraction (Zero YouTube Ads)
       const directAudioUrl = await resolveAdFreeAudioUrl(anthem.videoId);
       if (mySession !== playbackSessionId) return;
 
@@ -717,12 +903,9 @@
 
           await audio.play();
           return;
-        } catch (err) {
-          // If direct stream is blocked by browser CORS, fall through to Layer 2
-        }
+        } catch (err) {}
       }
 
-      // Layer 2: Fallback to YouTube-NoCookie Player with Instant Ad-Skipper Guard
       playFallbackNoCookieYouTube(anthem, labelText, mySession);
     }
 
@@ -741,7 +924,7 @@
         });
         ytPlayer.playVideo();
       } else {
-        transcriptEl.innerHTML = `⚠️ Audio engine loading—try starring ${driverName} again.`;
+        transcriptEl.innerHTML = `⚠️ Audio engine loading—try starring ${anthem.hook} again.`;
       }
     }
 
@@ -765,14 +948,23 @@
       } catch (e) {}
     }
 
-    // ================= CALENDAR & WEATHER =================
+    // ================= CALENDAR, AUTO NEXT-RACE ROLLOVER & WEATHER =================
+    function findNextUpcomingRace(races) {
+      const now = new Date();
+      // Keep current race on hoarding until 2 hours after Lights Out (when GP finishes), then auto-advance to next GP
+      const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+      return races.find(r => {
+        const lightsOut = new Date(`${r.date}T${r.time || '14:00:00Z'}`);
+        return (lightsOut.getTime() + TWO_HOURS_MS) > now.getTime();
+      }) || races[races.length - 1];
+    }
+
     async function fetchSeasonData() {
       try {
         const res = await fetch(`${API_BASE}.json`);
         const data = await res.json();
         seasonRaces = data.MRData.RaceTable.Races;
-        const now = new Date();
-        selectedRace = seasonRaces.find(r => new Date(`${r.date}T${r.time || '14:00:00Z'}`) > now) || seasonRaces[seasonRaces.length - 1];
+        selectedRace = findNextUpcomingRace(seasonRaces);
 
         const select = document.getElementById("race-selector");
         select.innerHTML = seasonRaces.map(r =>
@@ -789,6 +981,9 @@
       document.getElementById("race-round").textContent = `ROUND ${race.round} • ${race.season}`;
       document.getElementById("race-name").textContent = race.raceName;
       document.getElementById("race-circuit").textContent = `${race.Circuit.circuitName} — ${race.Circuit.Location.locality}, ${race.Circuit.Location.country}`;
+
+      // Sync Mini Track Map + Translucent Popup Data for this race
+      updateTrackMapAndModalUI(race);
 
       const sessions = [];
       if (race.FirstPractice) sessions.push({ name: "Free Practice 1", ...race.FirstPractice });
@@ -884,8 +1079,23 @@
 
     function startCountdown(targetDate) {
       if (countdownTimer) clearInterval(countdownTimer);
+      const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
       const update = () => {
-        const diff = targetDate - new Date();
+        const now = new Date();
+        const diff = targetDate - now;
+
+        // If race finished (2 hours past lights out), automatically roll hoarding over to the next Grand Prix!
+        if (diff < -TWO_HOURS_MS && seasonRaces.length > 0) {
+          const nextUp = findNextUpcomingRace(seasonRaces);
+          if (nextUp && selectedRace && nextUp.round !== selectedRace.round) {
+            selectedRace = nextUp;
+            document.getElementById("race-selector").value = nextUp.round;
+            renderRaceDetails(nextUp);
+            return;
+          }
+        }
+
         if (diff <= 0) {
           ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach(id => document.getElementById(id).textContent = "00");
           return;
@@ -1225,7 +1435,6 @@
       }
     }
 
-    // Plays full-length raw driver radio without any 10-second cutoff
     function playRawOpenF1Radio(mp3Url, label) {
       stopAllAudio();
       const mySession = playbackSessionId;
