@@ -30,6 +30,11 @@
     [data-theme="mercedes"] { --accent: #14b8a6; --accent-sec: #a1a1aa; --bg-card: #0f1717; --bg-hero-to: rgba(13, 148, 136, 0.4); }
     [data-theme="f1"] { --accent: #e11d48; --accent-sec: #ffffff; --bg-card: #18181b; --bg-hero-to: rgba(190, 18, 60, 0.4); }
 
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
     .font-display { font-family: 'Orbitron', sans-serif; }
     .font-sans { font-family: 'Inter', sans-serif; }
     .theme-card { background-color: var(--bg-card); }
@@ -40,16 +45,25 @@
     .theme-hero { background: linear-gradient(135deg, #090d16 0%, var(--bg-card) 55%, var(--bg-hero-to) 100%); }
 
     .tab-btn {
-      padding: 0.5rem 0.9rem;
-      font-size: 0.8rem;
+      padding: 0.45rem 0.7rem;
+      font-size: 0.75rem;
       font-weight: 700;
       border-radius: 0.5rem;
       color: #a1a1aa;
+      background-color: #18181b;
+      border: 1px solid #27272a;
       transition: all 0.2s;
       white-space: nowrap;
+      text-align: center;
+    }
+    @media (min-width: 640px) {
+      .tab-btn {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.8rem;
+      }
     }
     .tab-btn:hover { color: #ffffff; background-color: #27272a; }
-    .active-tab { background-color: var(--accent) !important; color: #ffffff !important; }
+    .active-tab { background-color: var(--accent) !important; color: #ffffff !important; border-color: var(--accent) !important; }
 
     /* Pirelli Tyre Ring Styling */
     .tyre-badge {
@@ -86,45 +100,47 @@
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
 
-  <!-- Top Telemetry & Theme Bar -->
+  <!-- Top Telemetry & Theme Bar (All desktop options now visible on mobile too) -->
   <header class="border-b border-zinc-800 bg-zinc-900/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5">
-        <span class="theme-accent-bg text-white font-display font-black px-2.5 py-1 rounded text-sm tracking-wider shadow">F1</span>
-        <h1 class="font-display font-bold text-base md:text-xl tracking-wide">PITWALL <span class="theme-sec-text text-xs align-top">PRO</span></h1>
+    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="theme-accent-bg text-white font-display font-black px-2.5 py-1 rounded text-xs sm:text-sm tracking-wider shadow">F1</span>
+        <h1 class="font-display font-bold text-sm sm:text-base md:text-xl tracking-wide">PITWALL <span class="theme-sec-text text-[10px] sm:text-xs align-top">PRO</span></h1>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800">
-        <!-- Pinned Driver -->
-        <div class="hidden sm:block">
-          <span class="text-zinc-500">FAV:</span>
-          <span id="pinned-driver" class="font-bold theme-sec-text ml-1">MAX (#1)</span>
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800 w-full sm:w-auto justify-between sm:justify-end">
+        <!-- Pinned Driver (Now visible on BOTH Mobile and Desktop) -->
+        <div class="flex items-center">
+          <span class="text-zinc-500 font-semibold">FAV:</span>
+          <span id="pinned-driver" class="font-bold theme-sec-text ml-1 truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
         </div>
-        <span class="hidden sm:inline text-zinc-700">|</span>
+        <span class="text-zinc-700">|</span>
 
-        <!-- Team Livery Theme Selector -->
-        <select id="theme-selector" class="bg-zinc-900 text-zinc-200 font-semibold px-2 py-1 rounded border border-zinc-700 focus:outline-none">
-          <option value="rbr">🔵 Red Bull Racing</option>
-          <option value="ferrari">🔴 Scuderia Ferrari</option>
-          <option value="mclaren">🟠 McLaren Papaya</option>
-          <option value="mercedes">🟢 Mercedes AMG</option>
-          <option value="f1">🏁 F1 Classic Red</option>
-        </select>
+        <div class="flex items-center gap-1.5">
+          <!-- Team Livery Theme Selector -->
+          <select id="theme-selector" class="bg-zinc-900 text-zinc-200 font-semibold px-1.5 sm:px-2 py-1 rounded border border-zinc-700 focus:outline-none text-[11px] sm:text-xs">
+            <option value="rbr">🔵 Red Bull Racing</option>
+            <option value="ferrari">🔴 Scuderia Ferrari</option>
+            <option value="mclaren">🟠 McLaren Papaya</option>
+            <option value="mercedes">🟢 Mercedes AMG</option>
+            <option value="f1">🏁 F1 Classic Red</option>
+          </select>
 
-        <button id="tz-toggle" class="theme-accent-text font-bold px-1.5 py-0.5 rounded hover:bg-zinc-900 transition">
-          🕒 Local
-        </button>
+          <button id="tz-toggle" class="theme-accent-text font-bold px-1.5 py-0.5 rounded hover:bg-zinc-900 transition whitespace-nowrap">
+            🕒 Local
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-5 space-y-6">
+  <main class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-5">
 
     <!-- Next Race Hero & Countdown -->
-    <section class="relative overflow-hidden rounded-2xl theme-hero border border-zinc-800 p-5 md:p-7 shadow-xl">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
-        <div>
-          <div class="flex items-center gap-2">
+    <section class="relative overflow-hidden rounded-2xl theme-hero border border-zinc-800 p-4 sm:p-5 md:p-7 shadow-xl">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-5">
+        <div class="w-full md:w-auto">
+          <div class="flex flex-wrap items-center gap-2">
             <span id="race-round" class="text-[11px] font-bold uppercase tracking-widest theme-sec-text bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-700">
               Loading Season...
             </span>
@@ -132,7 +148,7 @@
               📲 Install App
             </button>
           </div>
-          <h2 id="race-name" class="font-display text-2xl md:text-4xl font-black mt-3">
+          <h2 id="race-name" class="font-display text-xl sm:text-2xl md:text-4xl font-black mt-3 break-words">
             Fetching Next Grand Prix...
           </h2>
           <p id="race-circuit" class="text-zinc-400 text-xs md:text-sm mt-1">
@@ -156,27 +172,27 @@
       </div>
     </section>
 
-    <!-- Navigation Tabs -->
-    <div class="flex gap-1.5 border-b border-zinc-800 pb-2.5 overflow-x-auto no-scrollbar">
-      <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab">📅 Weekend & Weather</button>
-      <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn">🆚 Driver H2H Battle</button>
-      <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn">🧮 Points Simulator</button>
-      <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn">📻 Race Control & Radio</button>
-      <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn">🏆 Standings</button>
+    <!-- Navigation Tabs (Now wraps cleanly on mobile so ALL 5 options are visible on screen) -->
+    <div class="flex flex-wrap gap-1.5 sm:gap-2 border-b border-zinc-800 pb-3">
+      <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab flex-1 sm:flex-none">📅 Weekend & Weather</button>
+      <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn flex-1 sm:flex-none">🆚 Driver H2H Battle</button>
+      <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn flex-1 sm:flex-none">🧮 Points Simulator</button>
+      <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn flex-1 sm:flex-none">📻 Race Control & Radio</button>
+      <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn flex-1 sm:flex-none">🏆 Standings</button>
     </div>
 
     <!-- ================= TAB 1: SCHEDULE + LIVE TRACK WEATHER & TYRE RADAR ================= -->
     <section id="view-schedule" class="grid md:grid-cols-3 gap-6">
       <!-- Left 2 Columns: Timetable -->
-      <div class="md:col-span-2 theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+      <div class="md:col-span-2 theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <div>
             <h3 class="font-display font-bold text-base md:text-lg">Session Timetable</h3>
             <p class="text-xs text-zinc-400">Auto-converted to your timezone</p>
           </div>
-          <div class="flex items-center gap-2">
-            <select id="race-selector" class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none"></select>
-            <button id="whatsapp-share" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select id="race-selector" class="bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none flex-1 sm:flex-none min-w-0 truncate"></select>
+            <button id="whatsapp-share" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition shrink-0">
               📲 Share
             </button>
           </div>
@@ -185,7 +201,7 @@
       </div>
 
       <!-- Right Column: Live Track Weather & Pirelli Tyre Strategy Radar -->
-      <div class="theme-card border border-zinc-800 rounded-xl p-5 flex flex-col justify-between space-y-4">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
         <div>
           <div class="flex justify-between items-center mb-3">
             <h3 class="font-display font-bold text-base">🌧️ Track Weather Radar</h3>
@@ -242,16 +258,18 @@
     </section>
 
     <!-- ================= TAB 2: DRIVER HEAD-TO-HEAD TEAMMATE/RIVAL BATTLE ================= -->
-    <section id="view-h2h" class="hidden theme-card border border-zinc-800 rounded-xl p-5 space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-zinc-800 pb-4">
+    <section id="view-h2h" class="hidden theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-6 overflow-hidden">
+      <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3.5 border-b border-zinc-800 pb-4">
         <div>
-          <h3 class="font-display font-bold text-lg">🆚 Driver Head-to-Head Telemetry Battle</h3>
+          <h3 class="font-display font-bold text-base sm:text-lg">🆚 Driver Head-to-Head Telemetry Battle</h3>
           <p class="text-xs text-zinc-400">Compare Qualifying & Race Finish H2H across completed rounds this season</p>
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <select id="h2h-d1" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs font-bold text-white flex-1"></select>
-          <span class="font-display font-black text-xs theme-accent-text">VS</span>
-          <select id="h2h-d2" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2 text-xs font-bold text-white flex-1"></select>
+
+        <!-- Fixed Mobile Overflow: Stacks vertically on mobile so long names stay 100% inside the card border -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto min-w-0">
+          <select id="h2h-d1" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs font-bold text-white w-full sm:w-56 min-w-0 truncate focus:outline-none"></select>
+          <span class="font-display font-black text-xs theme-accent-text text-center py-0.5 sm:px-1 shrink-0">VS</span>
+          <select id="h2h-d2" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs font-bold text-white w-full sm:w-56 min-w-0 truncate focus:outline-none"></select>
         </div>
       </div>
 
@@ -263,7 +281,7 @@
     <!-- ================= TAB 3: "WHAT-IF" CHAMPIONSHIP POINTS SIMULATOR ================= -->
     <section id="view-simulator" class="hidden grid md:grid-cols-2 gap-6">
       <!-- Predictor Controls -->
-      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-center">
           <div>
             <h3 class="font-display font-bold text-base md:text-lg">🧮 Race Finish Predictor</h3>
@@ -281,7 +299,7 @@
       </div>
 
       <!-- Simulated Projected Standings -->
-      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <h3 class="font-display font-bold text-base md:text-lg">📊 Projected Championship Table</h3>
         <div id="sim-standings-output" class="space-y-2 text-xs md:text-sm max-h-[420px] overflow-y-auto pr-1"></div>
       </div>
@@ -290,13 +308,13 @@
     <!-- ================= TAB 4: LIVE FIA RACE CONTROL + TEAM RADIO SOUNDBOARD ================= -->
     <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
       <!-- OpenF1 Live Race Control Feed (Tap to Read Aloud) -->
-      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-3">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3 overflow-hidden">
         <div class="flex justify-between items-center">
           <div>
             <h3 class="font-display font-bold text-base">🚩 OpenF1 FIA Race Control Feed</h3>
             <p class="text-xs text-zinc-400">🔊 Tap any message below to hear FIA Race Control read it aloud</p>
           </div>
-          <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold">↻ Refresh</button>
+          <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold shrink-0">↻ Refresh</button>
         </div>
         <div id="race-control-list" class="space-y-2 max-h-96 overflow-y-auto pr-1 text-xs font-mono">
           <p class="text-zinc-500">Connecting to api.openf1.org/v1/race_control...</p>
@@ -304,7 +322,7 @@
       </div>
 
       <!-- Iconic Team Radio Soundboard (100% Original Broadcast Audio + Exact Transcript Sync) -->
-      <div class="theme-card border border-zinc-800 rounded-xl p-5 space-y-4">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-start gap-2">
           <div>
             <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
@@ -338,11 +356,11 @@
 
     <!-- ================= TAB 5: CURRENT WDC & WCC STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
-      <div class="theme-card border border-zinc-800 rounded-xl p-5">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
         <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
         <div id="wdc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
-      <div class="theme-card border border-zinc-800 rounded-xl p-5">
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
         <h3 class="font-display font-bold text-base mb-3">Constructors' Championship</h3>
         <div id="wcc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
@@ -577,13 +595,13 @@
 
     function renderStandings() {
       document.getElementById("wdc-list").innerHTML = driversList.map(d => `
-        <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
-          <div>
+        <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 gap-2">
+          <div class="min-w-0 truncate">
             <span class="font-bold text-zinc-500 w-7 inline-block">P${d.position}</span>
             <span class="font-bold text-white">${d.Driver.givenName} ${d.Driver.familyName}</span>
             <span class="text-[11px] text-zinc-500 ml-1">(${d.Constructors[0]?.name || ''})</span>
           </div>
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2 shrink-0">
             <span class="font-mono font-bold theme-accent-text">${d.points} PTS</span>
             <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)')" class="hover:scale-125 transition">⭐</button>
           </div>
@@ -668,9 +686,9 @@
         const pct2 = 100 - pct1;
         return `
           <div class="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800">
-            <div class="flex justify-between text-xs font-bold mb-1.5">
+            <div class="flex justify-between items-center text-xs font-bold mb-1.5 gap-2">
               <span class="theme-accent-text font-display text-sm">${m.v1}</span>
-              <span class="uppercase tracking-wider text-zinc-400">${m.label}</span>
+              <span class="uppercase tracking-wider text-zinc-400 text-center text-[11px] sm:text-xs">${m.label}</span>
               <span class="theme-sec-text font-display text-sm">${m.v2}</span>
             </div>
             <div class="w-full h-2.5 bg-zinc-800 rounded-full overflow-hidden flex">
@@ -690,9 +708,9 @@
       ).join("");
 
       container.innerHTML = F1_POINTS.map((pts, idx) => `
-        <div class="flex items-center gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800">
-          <span class="font-display font-bold text-xs w-14 theme-sec-text">P${idx + 1} <span class="text-[10px] text-zinc-500">+${pts}</span></span>
-          <select onchange="recalculateSimulation()" data-pos="${idx}" class="sim-pick bg-zinc-900 text-white text-xs p-1.5 rounded border border-zinc-700 flex-1">
+        <div class="flex items-center gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800 min-w-0">
+          <span class="font-display font-bold text-xs w-14 theme-sec-text shrink-0">P${idx + 1} <span class="text-[10px] text-zinc-500">+${pts}</span></span>
+          <select onchange="recalculateSimulation()" data-pos="${idx}" class="sim-pick bg-zinc-900 text-white text-xs p-1.5 rounded border border-zinc-700 flex-1 min-w-0 truncate">
             ${optionsHtml}
           </select>
         </div>
@@ -739,14 +757,14 @@
         const gap = idx === 0 ? "LEADER" : `-${leaderPts - d.newPoints}p`;
 
         return `
-          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800">
-            <div class="flex items-center gap-2">
-              <span class="font-display font-bold text-zinc-400 w-6">P${newPos}</span>
+          <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 gap-2">
+            <div class="flex items-center gap-2 min-w-0 truncate">
+              <span class="font-display font-bold text-zinc-400 w-6 shrink-0">P${newPos}</span>
               ${badge}
-              <span class="font-bold text-white">${d.name}</span>
-              ${d.added > 0 ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">+${d.added}</span>` : ''}
+              <span class="font-bold text-white truncate">${d.name}</span>
+              ${d.added > 0 ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold shrink-0">+${d.added}</span>` : ''}
             </div>
-            <div class="text-right font-mono">
+            <div class="text-right font-mono shrink-0">
               <span class="font-bold text-white">${d.newPoints} PTS</span>
               <span class="text-[10px] text-zinc-500 block">${gap}</span>
             </div>
@@ -864,8 +882,7 @@
       }
     }
 
-    // Iconic Pitwall Radio Soundboard — Replaced Leclerc & Kimi with verified working iconic MP3s (Toto Wolff & Bono/Hamilton)
-    // Pure original MP3 playback (No robotic TTS fallback on the soundboard)
+    // Iconic Pitwall Radio Soundboard — Pure original MP3 playback
     const RADIO_CLIPS = [
       {
         driver: "MAX VERSTAPPEN #1",
