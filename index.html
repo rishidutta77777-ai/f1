@@ -312,7 +312,7 @@
             <span id="radio-transcript" class="theme-sec-text font-bold truncate">
               [PITWALL AUDIO STANDBY — TAP ⭐ NEXT TO ANY DRIVER IN STANDINGS]
             </span>
-            <span id="clip-timer-text" class="text-zinc-400 font-bold ml-2 shrink-0">10.0s CLIP</span>
+            <span id="clip-timer-text" class="text-zinc-400 font-bold ml-2 shrink-0">STANDBY</span>
           </div>
           <div class="w-full h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
             <div id="clip-progress-bar" class="h-full theme-accent-bg transition-all duration-100" style="width: 0%"></div>
@@ -342,7 +342,7 @@
           <div class="flex justify-between items-center">
             <div>
               <h3 class="font-display font-bold text-base">🎙️ Latest Session Raw Driver Radio</h3>
-              <p class="text-xs text-zinc-400">Direct car-to-pitwall telemetry streams (Auto-stops at 10s)</p>
+              <p class="text-xs text-zinc-400">Direct car-to-pitwall telemetry streams (Full-length audio)</p>
             </div>
             <button onclick="fetchLiveTeamRadio()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold shrink-0">↻ Load</button>
           </div>
@@ -535,7 +535,7 @@
       });
     }
 
-    // ================= AUDIO ENGINE (ZERO OVERLAP + 10S CUTOFF) =================
+    // ================= AUDIO ENGINE =================
     function clearAudioTimers() {
       if (pendingStartTimeout) { clearTimeout(pendingStartTimeout); pendingStartTimeout = null; }
       if (clipCutoffTimer) { clearTimeout(clipCutoffTimer); clipCutoffTimer = null; }
@@ -543,7 +543,7 @@
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
       if (bar) bar.style.width = "0%";
-      if (timerTxt) timerTxt.textContent = "10.0s CLIP";
+      if (timerTxt) timerTxt.textContent = "STANDBY";
     }
 
     function stopAllAudio() {
@@ -556,6 +556,7 @@
         try {
           currentRadioAudio.onended = null;
           currentRadioAudio.onerror = null;
+          currentRadioAudio.ontimeupdate = null;
           currentRadioAudio.pause();
           currentRadioAudio.src = "";
         } catch (e) {}
@@ -576,6 +577,7 @@
       }
     }
 
+    // Strictly 10-second cutoff for Driver Anthems (and FIA TTS)
     function startTenSecondCutoff(labelHtml, sessionToken) {
       if (sessionToken !== playbackSessionId) return;
       clearAudioTimers();
@@ -827,7 +829,7 @@
     function renderStandings() {
       document.getElementById("wdc-list").innerHTML = driversList.map(d => {
         const fullName = `${d.Driver.givenName} ${d.Driver.familyName}`;
-        const driverId = d.Driver.driverId; // e.g. "verstappen", "arvid_lindblad", "piastri"
+        const driverId = d.Driver.driverId;
         return `
           <div class="flex justify-between items-center bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 gap-2">
             <div class="min-w-0 truncate">
@@ -1116,23 +1118,50 @@
       }
     }
 
+    // Plays full-length raw driver radio without any 10-second cutoff
     function playRawOpenF1Radio(mp3Url, label) {
       stopAllAudio();
       const mySession = playbackSessionId;
       playPitwallBeep();
 
-      startTenSecondCutoff(`🎙️ LIVE CAR RADIO: ${label}`, mySession);
+      const transcriptEl = document.getElementById("radio-transcript");
+      const bar = document.getElementById("clip-progress-bar");
+      const timerTxt = document.getElementById("clip-timer-text");
+
+      transcriptEl.innerHTML = `
+        <span class="inline-flex items-center mr-1.5">
+          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+        </span>
+        <span>🎙️ LIVE CAR RADIO: ${label}</span>
+      `;
+      if (timerTxt) timerTxt.textContent = "FULL CLIP";
 
       pendingStartTimeout = setTimeout(() => {
         if (mySession !== playbackSessionId) return;
         const audio = new Audio(mp3Url);
         currentRadioAudio = audio;
-        audio.onended = () => {
-          if (mySession === playbackSessionId) stopAllAudio();
+
+        // Track full-length audio progress naturally until it ends
+        audio.ontimeupdate = () => {
+          if (mySession !== playbackSessionId) return;
+          if (audio.duration && isFinite(audio.duration)) {
+            const pct = Math.min(100, (audio.currentTime / audio.duration) * 100);
+            const remaining = Math.max(0, audio.duration - audio.currentTime).toFixed(1);
+            if (bar) bar.style.width = `${pct}%`;
+            if (timerTxt) timerTxt.textContent = `${remaining}s left`;
+          }
         };
+
+        audio.onended = () => {
+          if (mySession === playbackSessionId) {
+            playPitwallBeep();
+            stopAllAudio();
+          }
+        };
+
         audio.play().catch(() => {
           if (mySession === playbackSessionId) {
-            document.getElementById("radio-transcript").innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
+            transcriptEl.innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
           }
         });
       }, 180);
