@@ -5,13 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>F1 Pitwall Pro | Telemetry & Weekend Hub</title>
 
-  <!-- PWA / Mobile App Meta Tags -->
+  <!-- No-Cache Headers so GitHub updates show immediately -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <!-- PWA Manifest & App Icons -->
+  <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0b0f19" id="meta-theme-color" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="F1 Pitwall" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23e11d48%22/><text x=%2250%22 y=%2268%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2252%22 fill=%22white%22 text-anchor=%22middle%22>F1</text></svg>" />
+
+  <!-- Custom F1 Pitwall App Icon (Browser Tab + Apple Touch Icon) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230b0f19'/><rect x='24' y='24' width='464' height='464' rx='95' fill='none' stroke='%23ef4444' stroke-width='20'/><path d='M90 190 L230 190 L200 245 L145 245 L135 270 L210 270 L185 320 L115 320 L90 375 L45 375 Z' fill='%23ef4444'/><path d='M255 190 L335 190 L265 375 L205 375 Z' fill='%23ffffff'/><text x='256' y='445' font-family='sans-serif' font-weight='900' font-size='54' fill='%23facc15' text-anchor='middle' letter-spacing='6'>PITWALL</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230b0f19'/><rect x='24' y='24' width='464' height='464' rx='95' fill='none' stroke='%23ef4444' stroke-width='20'/><path d='M90 190 L230 190 L200 245 L145 245 L135 270 L210 270 L185 320 L115 320 L90 375 L45 375 Z' fill='%23ef4444'/><path d='M255 190 L335 190 L265 375 L205 375 Z' fill='%23ffffff'/><text x='256' y='445' font-family='sans-serif' font-weight='900' font-size='54' fill='%23facc15' text-anchor='middle' letter-spacing='6'>PITWALL</text></svg>" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
@@ -100,7 +109,7 @@
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
 
-  <!-- Top Telemetry & Theme Bar (All desktop options now visible on mobile too) -->
+  <!-- Top Telemetry & Theme Bar -->
   <header class="border-b border-zinc-800 bg-zinc-900/90 backdrop-blur sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2">
@@ -109,7 +118,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800 w-full sm:w-auto justify-between sm:justify-end">
-        <!-- Pinned Driver (Now visible on BOTH Mobile and Desktop) -->
+        <!-- Pinned Driver -->
         <div class="flex items-center">
           <span class="text-zinc-500 font-semibold">FAV:</span>
           <span id="pinned-driver" class="font-bold theme-sec-text ml-1 truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
@@ -144,7 +153,7 @@
             <span id="race-round" class="text-[11px] font-bold uppercase tracking-widest theme-sec-text bg-zinc-900/90 px-3 py-1 rounded-full border border-zinc-700">
               Loading Season...
             </span>
-            <button id="pwa-install-btn" onclick="alert('To install as an App on Android: Tap the Chrome ⋮ menu (top right) and tap \'Add to Home screen\' or \'Install app\'!')" class="text-[11px] bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 px-2.5 py-1 rounded-full border border-zinc-700 transition">
+            <button id="pwa-install-btn" class="text-[11px] bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold px-3 py-1 rounded-full border border-emerald-400/40 shadow transition">
               📲 Install App
             </button>
           </div>
@@ -172,7 +181,7 @@
       </div>
     </section>
 
-    <!-- Navigation Tabs (Now wraps cleanly on mobile so ALL 5 options are visible on screen) -->
+    <!-- Navigation Tabs -->
     <div class="flex flex-wrap gap-1.5 sm:gap-2 border-b border-zinc-800 pb-3">
       <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab flex-1 sm:flex-none">📅 Weekend & Weather</button>
       <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn flex-1 sm:flex-none">🆚 Driver H2H Battle</button>
@@ -265,7 +274,6 @@
           <p class="text-xs text-zinc-400">Compare Qualifying & Race Finish H2H across completed rounds this season</p>
         </div>
 
-        <!-- Fixed Mobile Overflow: Stacks vertically on mobile so long names stay 100% inside the card border -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto min-w-0">
           <select id="h2h-d1" onchange="calculateH2H()" class="bg-zinc-950 border border-zinc-700 rounded-lg p-2.5 text-xs font-bold text-white w-full sm:w-56 min-w-0 truncate focus:outline-none"></select>
           <span class="font-display font-black text-xs theme-accent-text text-center py-0.5 sm:px-1 shrink-0">VS</span>
@@ -280,7 +288,6 @@
 
     <!-- ================= TAB 3: "WHAT-IF" CHAMPIONSHIP POINTS SIMULATOR ================= -->
     <section id="view-simulator" class="hidden grid md:grid-cols-2 gap-6">
-      <!-- Predictor Controls -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-center">
           <div>
@@ -298,7 +305,6 @@
         </div>
       </div>
 
-      <!-- Simulated Projected Standings -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <h3 class="font-display font-bold text-base md:text-lg">📊 Projected Championship Table</h3>
         <div id="sim-standings-output" class="space-y-2 text-xs md:text-sm max-h-[420px] overflow-y-auto pr-1"></div>
@@ -307,7 +313,6 @@
 
     <!-- ================= TAB 4: LIVE FIA RACE CONTROL + TEAM RADIO SOUNDBOARD ================= -->
     <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
-      <!-- OpenF1 Live Race Control Feed (Tap to Read Aloud) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3 overflow-hidden">
         <div class="flex justify-between items-center">
           <div>
@@ -321,7 +326,6 @@
         </div>
       </div>
 
-      <!-- Iconic Team Radio Soundboard (100% Original Broadcast Audio + Exact Transcript Sync) -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-start gap-2">
           <div>
@@ -333,15 +337,12 @@
           </button>
         </div>
 
-        <!-- Iconic Original Broadcast Clips -->
         <div id="radio-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
 
-        <!-- Active Transmission Status Box -->
         <div id="radio-transcript" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center text-xs font-mono theme-sec-text min-h-[48px] flex items-center justify-center gap-2">
           [PITWALL STANDBY — SELECT A TRANSMISSION]
         </div>
 
-        <!-- Live Session Car Radio Recordings from OpenF1 -->
         <div class="border-t border-zinc-800 pt-3">
           <div class="flex justify-between items-center mb-2">
             <span class="text-xs font-display font-bold text-zinc-300">🎙️ Latest Session Raw Driver Radio (OpenF1 MP3)</span>
@@ -382,10 +383,36 @@
     let allRaceResults = [];
     let allQualiResults = [];
 
-    // Shared Audio Instances
     let sharedAudioCtx = null;
     let currentRadioAudio = null;
     let raceControlMessages = [];
+    let deferredInstallPrompt = null;
+
+    // ================= PWA SERVICE WORKER + AUTO-UPDATE ENGINE =================
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          const reg = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+          // Check GitHub for updates every time the user opens or switches back to the app
+          document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") reg.update();
+          });
+        } catch (e) {
+          console.log("SW registration skipped:", e);
+        }
+      });
+    }
+
+    // Native PWA Install Button Logic
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      const btn = document.getElementById("pwa-install-btn");
+      if (btn) btn.style.display = "none";
+    });
 
     // Initialize App
     document.addEventListener("DOMContentLoaded", () => {
@@ -396,6 +423,21 @@
       fetchRaceControl();
       initRadioSoundboard();
       fetchLiveTeamRadio();
+
+      // Hide install button if already running inside the installed standalone PWA
+      if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+        document.getElementById("pwa-install-btn").style.display = "none";
+      }
+
+      document.getElementById("pwa-install-btn").addEventListener("click", async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+        } else {
+          alert("To install F1 Pitwall Pro with its App Icon:\n\n1. Tap the Chrome ⋮ menu (top right)\n2. Tap 'Add to Home screen' or 'Install app'!");
+        }
+      });
 
       document.getElementById("tz-toggle").addEventListener("click", () => {
         useUTC = !useUTC;
@@ -409,6 +451,14 @@
       });
 
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
+
+      // Auto-refresh live weather, tyre radar & FIA race control every 60 seconds
+      setInterval(() => {
+        if (selectedRace) {
+          fetchTrackWeather(selectedRace.Circuit.Location.lat, selectedRace.Circuit.Location.long);
+        }
+        fetchRaceControl();
+      }, 60000);
     });
 
     // ================= 1. THEME SWITCHER =================
@@ -882,7 +932,6 @@
       }
     }
 
-    // Iconic Pitwall Radio Soundboard — Pure original MP3 playback
     const RADIO_CLIPS = [
       {
         driver: "MAX VERSTAPPEN #1",
@@ -1006,7 +1055,6 @@
       });
     }
 
-    // Fetch real raw car radio MP3s from OpenF1's latest session
     async function fetchLiveTeamRadio() {
       const container = document.getElementById("live-driver-radio");
       try {
