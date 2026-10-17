@@ -18,7 +18,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="F1 Pitwall" />
 
-  <!-- YOUR CUSTOM APP ICON IMAGE LINK -->
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="apple-touch-icon" href="./icon.png" />
 
@@ -102,9 +101,20 @@
     }
     .eq-bar:nth-child(2) { animation-delay: 0.2s; }
     .eq-bar:nth-child(3) { animation-delay: 0.4s; }
+
+    .playing-card {
+      border-color: var(--accent-sec) !important;
+      background-color: rgba(250, 204, 21, 0.08) !important;
+      box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
+    }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-12">
+
+  <!-- Hidden YouTube Audio Engine Container (1x1px offscreen so mobile browsers allow audio) -->
+  <div id="yt-audio-Wrapper" class="fixed -bottom-10 -left-10 w-1 h-1 opacity-0 pointer-events-none overflow-hidden">
+    <div id="yt-anthem-player"></div>
+  </div>
 
   <!-- Top Telemetry & Theme Bar -->
   <header class="border-b border-zinc-800 bg-zinc-900/90 backdrop-blur sticky top-0 z-50">
@@ -115,13 +125,9 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800 w-full sm:w-auto justify-between sm:justify-end">
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center">
           <span class="text-zinc-500 font-semibold">FAV:</span>
-          <span id="pinned-driver" class="font-bold theme-sec-text truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
-          <span id="anthem-playing-indicator" class="hidden items-center gap-1 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-700">
-            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-            <button onclick="stopDriverAnthem()" class="text-[10px] text-red-400 font-bold ml-1" title="Stop Song">⏹</button>
-          </span>
+          <span id="pinned-driver" class="font-bold theme-sec-text ml-1 truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
         </div>
         <span class="text-zinc-700">|</span>
 
@@ -184,7 +190,7 @@
       <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab flex-1 sm:flex-none">📅 Weekend & Weather</button>
       <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn flex-1 sm:flex-none">🆚 Driver H2H Battle</button>
       <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn flex-1 sm:flex-none">🧮 Points Simulator</button>
-      <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn flex-1 sm:flex-none">📻 Race Control & Radio</button>
+      <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn flex-1 sm:flex-none">🎵 Anthems & Radio</button>
       <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn flex-1 sm:flex-none">🏆 Standings</button>
     </div>
 
@@ -306,44 +312,65 @@
       </div>
     </section>
 
-    <!-- ================= TAB 4: RACE CONTROL & RADIO ================= -->
-    <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
-      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3 overflow-hidden">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="font-display font-bold text-base">🚩 OpenF1 FIA Race Control Feed</h3>
-            <p class="text-xs text-zinc-400">🔊 Tap any message below to hear FIA Race Control read it aloud</p>
+    <!-- ================= TAB 4: 20 DRIVER ANTHEMS + RACE CONTROL + RADIO ================= -->
+    <section id="view-radio" class="hidden space-y-6">
+
+      <!-- Master Audio Status & 10-Second Auto-Stop Controller Bar -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between text-xs font-mono mb-1.5">
+            <span id="radio-transcript" class="theme-sec-text font-bold truncate">
+              [PITWALL AUDIO STANDBY — TAP ANY DRIVER ANTHEM OR RADIO]
+            </span>
+            <span id="clip-timer-text" class="text-zinc-400 font-bold ml-2 shrink-0">10.0s CLIP</span>
           </div>
-          <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold shrink-0">↻ Refresh</button>
+          <div class="w-full h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+            <div id="clip-progress-bar" class="h-full theme-accent-bg transition-all duration-100" style="width: 0%"></div>
+          </div>
         </div>
-        <div id="race-control-list" class="space-y-2 max-h-96 overflow-y-auto pr-1 text-xs font-mono">
-          <p class="text-zinc-500">Connecting to api.openf1.org/v1/race_control...</p>
-        </div>
+
+        <button onclick="stopAllAudio()" class="bg-red-600 hover:bg-red-500 active:scale-95 text-white font-display font-bold text-xs px-4 py-2.5 rounded-lg shadow transition shrink-0 flex items-center justify-center gap-1.5">
+          ⏹ STOP AUDIO
+        </button>
       </div>
 
-      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
-        <div class="flex justify-between items-start gap-2">
+      <!-- 20 Driver Anthems Grid (10-Sec Main Drop Clips) -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-zinc-800 pb-3">
           <div>
-            <h3 class="font-display font-bold text-base">📻 Iconic Pitwall Radio Soundboard</h3>
-            <p class="text-xs text-zinc-400">Tap any button to play the original F1 broadcast radio recording</p>
+            <h3 class="font-display font-bold text-base md:text-lg">🎵 Official Driver Anthems (10-Sec Main Drop)</h3>
+            <p class="text-xs text-zinc-400">Tap any driver to play the 10-second main chorus. Tapping again or tapping Stop halts immediately with zero overlap.</p>
           </div>
-          <button onclick="stopAllAudio()" class="text-[11px] bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 px-2.5 py-1 rounded font-bold shrink-0">
-            ⏹ Stop
-          </button>
+          <span class="text-[11px] bg-zinc-950 border border-zinc-800 px-2.5 py-1 rounded-full font-mono text-emerald-400">20 DRIVERS LOADED</span>
         </div>
 
-        <div id="radio-board" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+        <div id="driver-anthems-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5"></div>
+      </div>
 
-        <div id="radio-transcript" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-center text-xs font-mono theme-sec-text min-h-[48px] flex items-center justify-center gap-2">
-          [PITWALL STANDBY — SELECT A TRANSMISSION]
+      <!-- Bottom Split: FIA Race Control + Live OpenF1 Car Radio -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3 overflow-hidden">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="font-display font-bold text-base">🚩 OpenF1 FIA Race Control Feed</h3>
+              <p class="text-xs text-zinc-400">🔊 Tap any message below to hear FIA Race Control read it aloud</p>
+            </div>
+            <button onclick="fetchRaceControl()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold shrink-0">↻ Refresh</button>
+          </div>
+          <div id="race-control-list" class="space-y-2 max-h-80 overflow-y-auto pr-1 text-xs font-mono">
+            <p class="text-zinc-500">Connecting to api.openf1.org/v1/race_control...</p>
+          </div>
         </div>
 
-        <div class="border-t border-zinc-800 pt-3">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-display font-bold text-zinc-300">🎙️ Latest Session Raw Driver Radio (OpenF1 MP3)</span>
-            <button onclick="fetchLiveTeamRadio()" class="text-[10px] bg-zinc-800 hover:bg-zinc-700 px-2 py-0.5 rounded text-zinc-300">↻ Load Latest</button>
+        <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="font-display font-bold text-base">🎙️ Latest Session Raw Driver Radio</h3>
+              <p class="text-xs text-zinc-400">Direct car-to-pitwall telemetry streams (Auto-stops at 10s)</p>
+            </div>
+            <button onclick="fetchLiveTeamRadio()" class="text-xs bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 rounded font-bold shrink-0">↻ Load</button>
           </div>
-          <div id="live-driver-radio" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
+          <div id="live-driver-radio" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1">
             <p class="text-[11px] text-zinc-500 col-span-full">Fetching raw car radio recordings from OpenF1...</p>
           </div>
         </div>
@@ -353,10 +380,7 @@
     <!-- ================= TAB 5: STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="font-display font-bold text-base">Drivers' Championship</h3>
-          <span class="text-[10px] text-zinc-400">Tap ⭐ to play 10s Driver Anthem!</span>
-        </div>
+        <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
         <div id="wdc-list" class="space-y-2 text-xs md:text-sm"></div>
       </div>
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
@@ -367,9 +391,13 @@
 
   </main>
 
+  <!-- Load Official YouTube IFrame API for Exact 10s Anthem Chorus Playback -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
   <script>
     const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+    const MAX_CLIP_DURATION_MS = 10000; // Strict 10.0 second limit
 
     let seasonRaces = [];
     let selectedRace = null;
@@ -381,61 +409,74 @@
     let allRaceResults = [];
     let allQualiResults = [];
 
+    // Master Audio & Anti-Overlap State
     let sharedAudioCtx = null;
     let currentRadioAudio = null;
-    let currentAnthemAudio = null;
-    let anthemTimeout = null;
+    let ytPlayer = null;
+    let ytPlayerReady = false;
+    let playbackSessionId = 0;
+    let activeAnthemIndex = null;
+    let clipCutoffTimer = null;
+    let clipProgressInterval = null;
+    let pendingStartTimeout = null;
+
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
-    // ORIGINAL DRIVER SONGS MAP (Plays for 10 seconds when user pins a driver)
-    const DRIVER_ANTHEMS = {
-      max_verstappen: [
-        "https://www.myinstants.com/media/sounds/tu-tu-tu-du-max-verstappen.mp3",
-        "https://www.myinstants.com/media/sounds/max-verstappen-song.mp3",
-        "https://www.myinstants.com/media/sounds/33-max-verstappen.mp3"
-      ],
-      hamilton: [
-        "https://www.myinstants.com/media/sounds/lewis-hamilton.mp3",
-        "https://www.myinstants.com/media/sounds/in-in-in-in-in-hamilton.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      leclerc: [
-        "https://www.myinstants.com/media/sounds/charles-leclerc.mp3",
-        "https://www.myinstants.com/media/sounds/charles-leclerc-song.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      sainz: [
-        "https://www.myinstants.com/media/sounds/smooth-operator.mp3",
-        "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3"
-      ],
-      norris: [
-        "https://www.myinstants.com/media/sounds/lando-norris.mp3",
-        "https://www.myinstants.com/media/sounds/its-friday-then-saturday-sunday-what.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      alonso: [
-        "https://www.myinstants.com/media/sounds/fernando-alonso.mp3",
-        "https://www.myinstants.com/media/sounds/magic-alonso.mp3",
-        "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3"
-      ],
-      perez: [
-        "https://www.myinstants.com/media/sounds/checo-perez.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      piastri: [
-        "https://www.myinstants.com/media/sounds/oscar-piastri.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      russell: [
-        "https://www.myinstants.com/media/sounds/george-russell.mp3",
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3"
-      ],
-      default: [
-        "https://www.myinstants.com/media/sounds/f1-theme-song.mp3",
-        "https://www.myinstants.com/media/sounds/formula-1-theme.mp3"
-      ]
-    };
+    // ================= ALL 20 DRIVER ANTHEMS (EXACT MAIN CHORUS TIMESTAMPS) =================
+    const DRIVER_ANTHEMS = [
+      { id: "antonelli", driver: "Kimi Antonelli", num: "#12", team: "Mercedes", videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi, Kimi Antonelli! (Main Chorus)" },
+      { id: "russell", driver: "George Russell", num: "#63", team: "Mercedes", videoId: "IMrJ9pD-LG0", start: 1, hook: "I'm a Boss... (Russell Meme Anthem)" },
+      { id: "leclerc", driver: "Charles Leclerc", num: "#16", team: "Ferrari", videoId: "7AS2r2ltlhQ", start: 17, hook: "Charles, Charles Leclerc! (Official Song)" },
+      { id: "hamilton", driver: "Lewis Hamilton", num: "#44", team: "Ferrari", videoId: "QFXs9S9xhbk", start: 16, hook: "Lewis, Lewis, Lewis Hamilton! He is #1!" },
+      { id: "norris", driver: "Lando Norris", num: "#4", team: "McLaren", videoId: "xq0qE1fMlnA", start: 1, hook: "It's Friday Then, Saturday, Sunday, What!" },
+      { id: "piastri", driver: "Oscar Piastri", num: "#81", team: "McLaren", videoId: "2xwQeIvK58M", start: 37, hook: "Piastri, Oh-Oh-Oh, King of the Track!" },
+      { id: "hadjar", driver: "Isack Hadjar", num: "#6", team: "Racing Bulls", videoId: "MIR4ss7u-xE", start: 15, hook: "Isack, Isack Hadjar — HADJAR! (Drop)" },
+      { id: "lawson", driver: "Liam Lawson", num: "#30", team: "Red Bull / RB", videoId: "U1epDmZkBaQ", start: 2, hook: "I'm Liam Lawson! (Main Hook)" },
+      { id: "gasly", driver: "Pierre Gasly", num: "#10", team: "Alpine", videoId: "MvR2bBIRumM", start: 3, hook: "Pierre Gasly — Going Full Speed No Taxi!" },
+      { id: "lindblad", driver: "Arvid Lindblad", num: "#7", team: "Red Bull Jr", videoId: "OGk59GC9X1A", start: 7, hook: "Arvid Lindblad Is Number One!" },
+      { id: "colapinto", driver: "Franco Colapinto", num: "#43", team: "Alpine / Williams", videoId: "-YIWdIQl-i8", start: 13, hook: "Franco From Argentina! (Main Drop)" },
+      { id: "bearman", driver: "Oliver Bearman", num: "#87", team: "Haas", videoId: "BoEEQDj_2cA", start: 0, hook: "Oliver Bearman, El Mago Del Motor!" },
+      { id: "hulkenberg", driver: "Nico Hülkenberg", num: "#27", team: "Kick Sauber / Audi", videoId: "3T1GqewIbtg", start: 16, hook: "Hülkenberg, Hülkenberg! (Main Drop)" },
+      { id: "bortoleto", driver: "Gabriel Bortoleto", num: "#5", team: "Kick Sauber / Audi", videoId: "fJY1PC-K39M", start: 1, hook: "Audi, Audi, Audi Bortoleto!" },
+      { id: "ocon", driver: "Esteban Ocon", num: "#31", team: "Haas", videoId: "9BA3338Tv90", start: 86, hook: "Esteban Ocon — All the way from Normandy!" },
+      { id: "albon", driver: "Alexander Albon", num: "#23", team: "Williams", videoId: "xfJA-7CsgZM", start: 57, hook: "Alexander Albon, Racing to the Top!" },
+      { id: "tsunoda", driver: "Yuki Tsunoda", num: "#22", team: "Racing Bulls", videoId: "1m-H0pHajCo", start: 14, hook: "Yuki Tsunoda — Traffic Paradise!" },
+      { id: "stroll", driver: "Lance Stroll", num: "#18", team: "Aston Martin", videoId: "sawwJjyFji8", start: 9, hook: "Lance Stroll — Daddy's Cash Chorus!" },
+      { id: "bottas", driver: "Valtteri Bottas", num: "#77", team: "Mercedes / Cadillac", videoId: "r7VDQctNyFg", start: 22, hook: "Valtteri Bottas #77! (Main Drop)" },
+      { id: "perez", driver: "Sergio Pérez", num: "#11", team: "Red Bull / F1", videoId: "d8y3QCiI4_0", start: 27, hook: "Sergio Pérez! Go Checo, Go Checo!" }
+    ];
+
+    // Initialize YouTube Hidden Player when API is ready
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player("yt-anthem-player", {
+        height: "1",
+        width: "1",
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0
+        },
+        events: {
+          onReady: () => { ytPlayerReady = true; },
+          onStateChange: onYtPlayerStateChange
+        }
+      });
+    }
+
+    function onYtPlayerStateChange(event) {
+      // Start the strict 10-second timer the exact moment audio starts playing
+      if (event.data === YT.PlayerState.PLAYING && activeAnthemIndex !== null) {
+        const clip = DRIVER_ANTHEMS[activeAnthemIndex];
+        startTenSecondCutoff(`🎵 ${clip.driver} (${clip.num}): "${clip.hook}"`, playbackSessionId);
+      } else if (event.data === YT.PlayerState.ENDED) {
+        stopAllAudio();
+      }
+    }
 
     // Service Worker Auto-Update Registration
     if ("serviceWorker" in navigator) {
@@ -465,7 +506,7 @@
       fetchSeasonData();
       fetchStandingsAndH2H();
       fetchRaceControl();
-      initRadioSoundboard();
+      initDriverAnthemsGrid();
       fetchLiveTeamRadio();
 
       if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
@@ -514,6 +555,189 @@
       });
     }
 
+    // ================= MASTER AUDIO ENGINE (ZERO OVERLAP + STRICT 10S CUTOFF) =================
+    function clearAudioTimers() {
+      if (pendingStartTimeout) {
+        clearTimeout(pendingStartTimeout);
+        pendingStartTimeout = null;
+      }
+      if (clipCutoffTimer) {
+        clearTimeout(clipCutoffTimer);
+        clipCutoffTimer = null;
+      }
+      if (clipProgressInterval) {
+        clearInterval(clipProgressInterval);
+        clipProgressInterval = null;
+      }
+      const bar = document.getElementById("clip-progress-bar");
+      const timerTxt = document.getElementById("clip-timer-text");
+      if (bar) bar.style.width = "0%";
+      if (timerTxt) timerTxt.textContent = "10.0s CLIP";
+    }
+
+    function stopAllAudio() {
+      // Increment session ID so any in-flight callbacks or timeouts are immediately cancelled
+      playbackSessionId++;
+      activeAnthemIndex = null;
+      clearAudioTimers();
+
+      // 1. Stop HTML5 Audio
+      if (currentRadioAudio) {
+        try {
+          currentRadioAudio.onended = null;
+          currentRadioAudio.onerror = null;
+          currentRadioAudio.pause();
+          currentRadioAudio.src = "";
+        } catch (e) {}
+        currentRadioAudio = null;
+      }
+
+      // 2. Stop YouTube IFrame Player
+      if (ytPlayer && ytPlayerReady && typeof ytPlayer.stopVideo === "function") {
+        try {
+          ytPlayer.stopVideo();
+        } catch (e) {}
+      }
+
+      // 3. Stop Speech Synthesis
+      if ("speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {}
+      }
+
+      // 4. Reset All Anthem Button UI States
+      updateAnthemButtonsUI();
+      const transcriptEl = document.getElementById("radio-transcript");
+      if (transcriptEl) {
+        transcriptEl.innerHTML = `[PITWALL AUDIO STANDBY — TAP ANY DRIVER ANTHEM OR RADIO]`;
+      }
+    }
+
+    function startTenSecondCutoff(labelHtml, sessionToken) {
+      if (sessionToken !== playbackSessionId) return;
+      clearAudioTimers();
+
+      const transcriptEl = document.getElementById("radio-transcript");
+      const bar = document.getElementById("clip-progress-bar");
+      const timerTxt = document.getElementById("clip-timer-text");
+
+      transcriptEl.innerHTML = `
+        <span class="inline-flex items-center mr-1.5">
+          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+        </span>
+        <span>${labelHtml}</span>
+      `;
+
+      const startTime = Date.now();
+      clipProgressInterval = setInterval(() => {
+        if (sessionToken !== playbackSessionId) {
+          clearAudioTimers();
+          return;
+        }
+        const elapsed = Date.now() - startTime;
+        const pct = Math.min(100, (elapsed / MAX_CLIP_DURATION_MS) * 100);
+        const remaining = Math.max(0, (MAX_CLIP_DURATION_MS - elapsed) / 1000).toFixed(1);
+        if (bar) bar.style.width = `${pct}%`;
+        if (timerTxt) timerTxt.textContent = `${remaining}s left`;
+      }, 100);
+
+      // Hard stop at 10.0 seconds
+      clipCutoffTimer = setTimeout(() => {
+        if (sessionToken === playbackSessionId) {
+          playPitwallBeep();
+          stopAllAudio();
+        }
+      }, MAX_CLIP_DURATION_MS);
+    }
+
+    function initDriverAnthemsGrid() {
+      const grid = document.getElementById("driver-anthems-grid");
+      grid.innerHTML = DRIVER_ANTHEMS.map((item, idx) => `
+        <button id="anthem-btn-${idx}" onclick="toggleDriverAnthem(${idx})" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 p-3 rounded-xl text-left transition flex flex-col justify-between gap-2 group">
+          <div class="flex justify-between items-center w-full">
+            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider truncate">${item.team}</span>
+            <span class="font-display font-black text-xs theme-sec-text">${item.num}</span>
+          </div>
+          <div>
+            <span class="font-display font-bold text-xs sm:text-sm text-white block truncate">${item.driver}</span>
+            <span id="anthem-status-${idx}" class="text-[11px] font-semibold text-zinc-400 group-hover:text-white flex items-center gap-1 mt-1">
+              ▶️ Play 10s Anthem
+            </span>
+          </div>
+        </button>
+      `).join("");
+    }
+
+    function updateAnthemButtonsUI() {
+      DRIVER_ANTHEMS.forEach((_, idx) => {
+        const btn = document.getElementById(`anthem-btn-${idx}`);
+        const status = document.getElementById(`anthem-status-${idx}`);
+        if (!btn || !status) return;
+        if (activeAnthemIndex === idx) {
+          btn.classList.add("playing-card");
+          status.innerHTML = `<span class="text-red-400 font-bold">⏹ Stop Anthem</span>`;
+        } else {
+          btn.classList.remove("playing-card");
+          status.innerHTML = `▶️ Play 10s Anthem`;
+        }
+      });
+    }
+
+    function toggleDriverAnthem(idx) {
+      // If user clicks the currently playing driver button, stop immediately
+      if (activeAnthemIndex === idx) {
+        stopAllAudio();
+        return;
+      }
+
+      // Stop any previous audio first so nothing ever overlaps
+      stopAllAudio();
+      const mySession = playbackSessionId;
+      activeAnthemIndex = idx;
+      updateAnthemButtonsUI();
+      playPitwallBeep();
+
+      const clip = DRIVER_ANTHEMS[idx];
+      const transcriptEl = document.getElementById("radio-transcript");
+      transcriptEl.innerHTML = `⏳ Loading ${clip.driver} Anthem (${clip.hook})...`;
+
+      if (ytPlayer && ytPlayerReady && typeof ytPlayer.loadVideoById === "function") {
+        ytPlayer.loadVideoById({
+          videoId: clip.videoId,
+          startSeconds: clip.start,
+          endSeconds: clip.start + 10
+        });
+        ytPlayer.playVideo();
+        // Backup 10.5s cutoff in case buffering takes a moment
+        startTenSecondCutoff(`🎵 ${clip.driver} (${clip.num}): "${clip.hook}"`, mySession);
+      } else {
+        // Fallback if YouTube script is still initializing
+        transcriptEl.innerHTML = `⚠️ Audio engine initializing—tap ${clip.driver} again in 1 second.`;
+      }
+    }
+
+    function playPitwallBeep() {
+      try {
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume();
+
+        const osc = sharedAudioCtx.createOscillator();
+        const gain = sharedAudioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1400, sharedAudioCtx.currentTime);
+        osc.frequency.setValueAtTime(1850, sharedAudioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, sharedAudioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(sharedAudioCtx.destination);
+        osc.start();
+        osc.stop(sharedAudioCtx.currentTime + 0.18);
+      } catch (e) {}
+    }
+
+    // ================= CALENDAR & WEATHER =================
     async function fetchSeasonData() {
       try {
         const res = await fetch(`${API_BASE}.json`);
@@ -660,6 +884,7 @@
       setTimeout(() => btn.textContent = "📲 Share", 2000);
     }
 
+    // ================= STANDINGS, H2H, SIMULATOR =================
     async function fetchStandingsAndH2H() {
       try {
         const [wdcRes, wccRes, resultsRes, qualiRes] = await Promise.all([
@@ -690,7 +915,7 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span class="font-mono font-bold theme-accent-text">${d.points} PTS</span>
-            <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)', '${d.Driver.driverId}')" class="hover:scale-125 active:scale-95 transition" title="Set Favorite & Play 10s Driver Song">⭐</button>
+            <button onclick="pinDriver('${d.Driver.code || d.Driver.familyName} (P${d.position} • ${d.points}p)')" class="hover:scale-125 transition">⭐</button>
           </div>
         </div>
       `).join("");
@@ -864,107 +1089,7 @@
       initSimulator();
     }
 
-    function playPitwallBeep() {
-      try {
-        if (!sharedAudioCtx) {
-          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume();
-
-        const osc = sharedAudioCtx.createOscillator();
-        const gain = sharedAudioCtx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(1400, sharedAudioCtx.currentTime);
-        osc.frequency.setValueAtTime(1850, sharedAudioCtx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.12, sharedAudioCtx.currentTime);
-        osc.connect(gain);
-        gain.connect(sharedAudioCtx.destination);
-        osc.start();
-        osc.stop(sharedAudioCtx.currentTime + 0.18);
-      } catch (e) {}
-    }
-
-    function stopDriverAnthem() {
-      if (anthemTimeout) {
-        clearTimeout(anthemTimeout);
-        anthemTimeout = null;
-      }
-      if (currentAnthemAudio) {
-        currentAnthemAudio.pause();
-        currentAnthemAudio.currentTime = 0;
-        currentAnthemAudio = null;
-      }
-      const ind = document.getElementById("anthem-playing-indicator");
-      if (ind) {
-        ind.classList.add("hidden");
-        ind.classList.remove("inline-flex");
-      }
-    }
-
-    function stopAllAudio() {
-      stopDriverAnthem();
-      if (currentRadioAudio) {
-        currentRadioAudio.pause();
-        currentRadioAudio.currentTime = 0;
-        currentRadioAudio = null;
-      }
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
-      document.getElementById("radio-transcript").innerHTML = `[PITWALL STANDBY — SELECT A TRANSMISSION]`;
-    }
-
-    // Plays the chosen driver's original song for exactly 10 seconds
-    function playDriverAnthem10Sec(driverId) {
-      stopAllAudio();
-
-      let key = "default";
-      if (driverId) {
-        const lower = driverId.toLowerCase();
-        if (lower.includes("verstappen")) key = "max_verstappen";
-        else if (lower.includes("hamilton")) key = "hamilton";
-        else if (lower.includes("leclerc")) key = "leclerc";
-        else if (lower.includes("sainz")) key = "sainz";
-        else if (lower.includes("norris")) key = "norris";
-        else if (lower.includes("alonso")) key = "alonso";
-        else if (lower.includes("perez")) key = "perez";
-        else if (lower.includes("piastri")) key = "piastri";
-        else if (lower.includes("russell")) key = "russell";
-      }
-
-      const urls = [...(DRIVER_ANTHEMS[key] || DRIVER_ANTHEMS.default), ...DRIVER_ANTHEMS.default];
-      tryPlayAnthemCandidate(urls);
-    }
-
-    function tryPlayAnthemCandidate(urls) {
-      if (!urls.length) return;
-      const nextUrl = urls.shift();
-      const audio = new Audio(nextUrl);
-      audio.loop = true; // Ensures if clip is < 10s, it keeps playing for the full 10 seconds
-      currentAnthemAudio = audio;
-
-      audio.onplaying = () => {
-        const ind = document.getElementById("anthem-playing-indicator");
-        if (ind) {
-          ind.classList.remove("hidden");
-          ind.classList.add("inline-flex");
-        }
-        if (anthemTimeout) clearTimeout(anthemTimeout);
-        // Stop automatically after exactly 10 seconds (10,000 ms)
-        anthemTimeout = setTimeout(() => {
-          stopDriverAnthem();
-        }, 10000);
-      };
-
-      audio.onerror = () => {
-        tryPlayAnthemCandidate(urls);
-      };
-
-      audio.play().catch(() => {
-        tryPlayAnthemCandidate(urls);
-      });
-    }
-
+    // ================= FIA RACE CONTROL & OPENF1 RAW RADIO =================
     async function fetchRaceControl() {
       const list = document.getElementById("race-control-list");
       try {
@@ -981,7 +1106,7 @@
           const color = isRed ? "border-red-500 text-red-300" : isYellow ? "border-amber-400 text-amber-300" : "border-zinc-800 text-zinc-300";
           const timeStr = msg.date ? new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : "FIA";
           return `
-            <div onclick="readRaceControlMessage(${idx})" class="bg-zinc-950 hover:bg-zinc-900 active:scale-[0.99] cursor-pointer transition p-2.5 rounded border-l-4 ${color} flex justify-between items-center gap-2 group" title="Tap to read message aloud">
+            <div onclick="readRaceControlMessage(${idx})" class="bg-zinc-950 hover:bg-zinc-900 active:scale-[0.99] cursor-pointer transition p-2.5 rounded border-l-4 ${color} flex justify-between items-center gap-2 group">
               <div>
                 <span class="text-[10px] text-zinc-500 block">${timeStr} • ${msg.category || 'RACE CONTROL'}</span>
                 <span class="font-bold">${msg.message}</span>
@@ -1013,150 +1138,24 @@
       if (!msgObj) return;
 
       stopAllAudio();
+      const mySession = playbackSessionId;
       playPitwallBeep();
 
       const spokenText = `${msgObj.category || 'Race Control'}. ${msgObj.message}`;
-      document.getElementById("radio-transcript").innerHTML = `
-        <span class="inline-flex items-center">
-          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-        </span>
-        <span>🚩 FIA: "${msgObj.message}"</span>
-      `;
+      startTenSecondCutoff(`🚩 FIA: "${msgObj.message}"`, mySession);
 
-      if ('speechSynthesis' in window) {
-        setTimeout(() => {
+      if ("speechSynthesis" in window) {
+        pendingStartTimeout = setTimeout(() => {
+          if (mySession !== playbackSessionId) return;
           const utter = new SpeechSynthesisUtterance(spokenText);
           utter.rate = 1.05;
           utter.pitch = 0.92;
           utter.onend = () => {
-            document.getElementById("radio-transcript").innerHTML = `🚩 "${msgObj.message}"`;
+            if (mySession === playbackSessionId) stopAllAudio();
           };
           window.speechSynthesis.speak(utter);
-        }, 200);
+        }, 180);
       }
-    }
-
-    const RADIO_CLIPS = [
-      {
-        driver: "MAX VERSTAPPEN #1",
-        label: "🦁 Simply Lovely!",
-        quote: "Haha, yes boys! Simply lovely!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/verstappen-simply-lovely.mp3",
-          "https://www.myinstants.com/media/sounds/simply-lovely.mp3",
-          "https://www.myinstants.com/media/sounds/tu-tu-tu-du-max-verstappen.mp3"
-        ]
-      },
-      {
-        driver: "GP LAMBIASE (ENGINEER)",
-        label: "🛞 Box, Box!",
-        quote: "Box, Box! Box, Box!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/box-box.mp3",
-          "https://www.myinstants.com/media/sounds/f1-radio-box-box.mp3"
-        ]
-      },
-      {
-        driver: "CARLOS SAINZ #55",
-        label: "🎶 Smooth Operator",
-        quote: "Smooth Operator! Smooooth Operatooor!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/smooth-operator.mp3",
-          "https://www.myinstants.com/media/sounds/carlos-sainz-smooth-operator.mp3"
-        ]
-      },
-      {
-        driver: "TOTO WOLFF (MERCEDES)",
-        label: "🎧 No Michael, No!",
-        quote: "No, Michael! No, no, Michael! That was so not right!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/no-mikey.mp3",
-          "https://www.myinstants.com/media/sounds/no-michael-no-toto.mp3",
-          "https://www.myinstants.com/media/sounds/no-michael-no.mp3"
-        ]
-      },
-      {
-        driver: "BONO & HAMILTON #44",
-        label: "🛞 In, In, In, In, In!",
-        quote: "In, in, in, in, in, in, in! Stay out, stay out!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/in-in-in-in-in-hamilton.mp3",
-          "https://www.myinstants.com/media/sounds/in-in-in-in-in.mp3"
-        ]
-      },
-      {
-        driver: "FERNANDO ALONSO #14",
-        label: "⚡ All The Time Space",
-        quote: "All the time you have to leave a space!",
-        audioUrls: [
-          "https://www.myinstants.com/media/sounds/all-the-time-you-have-to-leave-a-space.mp3",
-          "https://www.myinstants.com/media/sounds/gp2-engine.mp3"
-        ]
-      }
-    ];
-
-    function initRadioSoundboard() {
-      const board = document.getElementById("radio-board");
-      board.innerHTML = RADIO_CLIPS.map((c, i) => `
-        <button onclick="playRadioClip(${i})" class="bg-zinc-950 hover:bg-zinc-900 active:scale-[0.98] border border-zinc-800 p-3 rounded-xl text-left transition group">
-          <span class="text-[10px] font-bold text-zinc-500 block">${c.driver}</span>
-          <span class="font-display font-bold text-xs md:text-sm text-white group-hover:theme-sec-text">🔊 ${c.label}</span>
-        </button>
-      `).join("");
-    }
-
-    function playRadioClip(idx) {
-      const clip = RADIO_CLIPS[idx];
-      stopAllAudio();
-      playPitwallBeep();
-
-      const transcriptEl = document.getElementById("radio-transcript");
-      transcriptEl.innerHTML = `
-        <span class="inline-flex items-center">
-          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-        </span>
-        <span>📻 ${clip.driver}: "${clip.quote}"</span>
-      `;
-
-      const candidateUrls = [...clip.audioUrls];
-      setTimeout(() => {
-        tryPlayOriginalRadioMp3(candidateUrls, clip);
-      }, 150);
-    }
-
-    function tryPlayOriginalRadioMp3(urls, clip) {
-      const transcriptEl = document.getElementById("radio-transcript");
-
-      if (!urls.length) {
-        transcriptEl.innerHTML = `📻 ${clip.driver}: "${clip.quote}"`;
-        return;
-      }
-
-      const nextUrl = urls.shift();
-      const audio = new Audio(nextUrl);
-      currentRadioAudio = audio;
-
-      audio.onplaying = () => {
-        transcriptEl.innerHTML = `
-          <span class="inline-flex items-center">
-            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-          </span>
-          <span>📻 ${clip.driver}: "${clip.quote}"</span>
-        `;
-      };
-
-      audio.onended = () => {
-        playPitwallBeep();
-        transcriptEl.innerHTML = `📻 ${clip.driver}: "${clip.quote}"`;
-      };
-
-      audio.onerror = () => {
-        tryPlayOriginalRadioMp3(urls, clip);
-      };
-
-      audio.play().catch(() => {
-        tryPlayOriginalRadioMp3(urls, clip);
-      });
     }
 
     async function fetchLiveTeamRadio() {
@@ -1191,32 +1190,29 @@
 
     function playRawOpenF1Radio(mp3Url, label) {
       stopAllAudio();
+      const mySession = playbackSessionId;
       playPitwallBeep();
 
-      const transcriptEl = document.getElementById("radio-transcript");
-      transcriptEl.innerHTML = `
-        <span class="inline-flex items-center">
-          <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
-        </span>
-        <span>🎙️ LIVE CAR RADIO: ${label}</span>
-      `;
+      startTenSecondCutoff(`🎙️ LIVE CAR RADIO: ${label}`, mySession);
 
-      setTimeout(() => {
+      pendingStartTimeout = setTimeout(() => {
+        if (mySession !== playbackSessionId) return;
         const audio = new Audio(mp3Url);
         currentRadioAudio = audio;
         audio.onended = () => {
-          transcriptEl.innerHTML = `🎙️ Finished playing ${label}`;
+          if (mySession === playbackSessionId) stopAllAudio();
         };
         audio.play().catch(() => {
-          transcriptEl.innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
+          if (mySession === playbackSessionId) {
+            document.getElementById("radio-transcript").innerHTML = `⚠️ Could not play raw telemetry stream for ${label}`;
+          }
         });
       }, 180);
     }
 
-    function pinDriver(info, driverId) {
+    function pinDriver(info) {
       localStorage.setItem("f1_pinned_driver", info);
       loadPinnedDriver();
-      playDriverAnthem10Sec(driverId);
     }
 
     function loadPinnedDriver() {
