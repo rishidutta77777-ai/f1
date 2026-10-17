@@ -1,6 +1,5 @@
 const CACHE_NAME = "f1-pitwall-pro-live-v1";
 
-// Activate immediately without waiting for user to close all tabs
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -17,15 +16,10 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// NETWORK-FIRST STRATEGY:
-// Always fetches the latest code from GitHub when online so updates appear automatically!
-// Falls back to cache only if the phone has no internet connection.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-
   const url = new URL(event.request.url);
 
-  // For HTML / JS / CSS on your GitHub Pages domain: always check network first with no-cache
   if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
@@ -39,7 +33,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // For external APIs (Jolpica, OpenF1, Open-Meteo, MyInstants): fetch live
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );
