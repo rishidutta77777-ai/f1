@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -374,6 +375,15 @@
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
 
+    // Ad-Free Direct Audio Stream Mirrors (Piped / Invidious APIs)
+    const ADFREE_PIPED_APIS = [
+      "https://pipedapi.kavin.rocks",
+      "https://pipedapi-libre.kavin.rocks",
+      "https://pipedapi.tokhmi.xyz",
+      "https://pipedapi.syncpundit.io",
+      "https://api.piped.private.coffee"
+    ];
+
     let seasonRaces = [];
     let selectedRace = null;
     let useUTC = false;
@@ -392,8 +402,12 @@
     let clipCutoffTimer = null;
     let clipProgressInterval = null;
     let pendingStartTimeout = null;
+    let ytAdGuardInterval = null;
     let pendingYtAnthemLabel = null;
     let pendingYtSessionId = null;
+    let pendingYtTargetStart = 0;
+
+    const adFreeStreamCache = {};
 
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
@@ -437,20 +451,70 @@
       return { videoId: "mS41bHNw1WI", start: 14, hook: "F1 Anthem" };
     }
 
+    // Resolves direct ad-free audio stream URL from a YouTube videoId
+    async function resolveAdFreeAudioUrl(videoId) {
+      if (adFreeStreamCache[videoId]) return adFreeStreamCache[videoId];
+
+      for (const apiBase of ADFREE_PIPED_APIS) {
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 1600);
+          const res = await fetch(`${apiBase}/streams/${videoId}`, { signal: ctrl.signal });
+          clearTimeout(tid);
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (Array.isArray(data.audioStreams) && data.audioStreams.length > 0) {
+            const m4a = data.audioStreams.find(s => s.mimeType && s.mimeType.includes("mp4")) || data.audioStreams[0];
+            if (m4a && m4a.url) {
+              adFreeStreamCache[videoId] = m4a.url;
+              return m4a.url;
+            }
+          }
+        } catch (e) {}
+      }
+      return null;
+    }
+
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player("yt-anthem-player", {
+        host: "https://www.youtube-nocookie.com",
         height: "1",
         width: "1",
-        playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, modestbranding: 1, playsinline: 1, rel: 0 },
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          iv_load_policy: 3,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          origin: window.location.origin
+        },
         events: {
           onReady: () => { ytPlayerReady = true; },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
-              // Start the exact 10-second timer once audio actually begins playing
-              if (pendingYtSessionId === playbackSessionId && pendingYtAnthemLabel) {
-                const label = pendingYtAnthemLabel;
-                pendingYtAnthemLabel = null;
-                startTenSecondCutoff(label, pendingYtSessionId);
+              if (pendingYtSessionId === playbackSessionId) {
+                // Ad-Skipper Guard: Ensure player is at target chorus timestamp and not playing an ad at 0:00
+                if (ytAdGuardInterval) clearInterval(ytAdGuardInterval);
+                ytAdGuardInterval = setInterval(() => {
+                  if (pendingYtSessionId !== playbackSessionId || !ytPlayer || typeof ytPlayer.getCurrentTime !== "function") {
+                    clearInterval(ytAdGuardInterval);
+                    return;
+                  }
+                  const cur = ytPlayer.getCurrentTime();
+                  if (pendingYtTargetStart > 2 && cur < pendingYtTargetStart - 1.5) {
+                    // Instantly skip pre-roll ad and jump straight to the song's chorus
+                    ytPlayer.seekTo(pendingYtTargetStart, true);
+                    return;
+                  }
+                  if (pendingYtAnthemLabel) {
+                    const label = pendingYtAnthemLabel;
+                    pendingYtAnthemLabel = null;
+                    startTenSecondCutoff(label, pendingYtSessionId);
+                  }
+                }, 150);
               }
             } else if (event.data === YT.PlayerState.ENDED) {
               stopAllAudio();
@@ -535,11 +599,12 @@
       });
     }
 
-    // ================= AUDIO ENGINE =================
+    // ================= AUDIO ENGINE (AD-FREE + 10S ANTHEM CUTOFF) =================
     function clearAudioTimers() {
       if (pendingStartTimeout) { clearTimeout(pendingStartTimeout); pendingStartTimeout = null; }
       if (clipCutoffTimer) { clearTimeout(clipCutoffTimer); clipCutoffTimer = null; }
       if (clipProgressInterval) { clearInterval(clipProgressInterval); clipProgressInterval = null; }
+      if (ytAdGuardInterval) { clearInterval(ytAdGuardInterval); ytAdGuardInterval = null; }
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
       if (bar) bar.style.width = "0%";
@@ -550,6 +615,7 @@
       playbackSessionId++;
       pendingYtAnthemLabel = null;
       pendingYtSessionId = null;
+      pendingYtTargetStart = 0;
       clearAudioTimers();
 
       if (currentRadioAudio) {
@@ -557,6 +623,7 @@
           currentRadioAudio.onended = null;
           currentRadioAudio.onerror = null;
           currentRadioAudio.ontimeupdate = null;
+          currentRadioAudio.onplaying = null;
           currentRadioAudio.pause();
           currentRadioAudio.src = "";
         } catch (e) {}
@@ -580,7 +647,8 @@
     // Strictly 10-second cutoff for Driver Anthems (and FIA TTS)
     function startTenSecondCutoff(labelHtml, sessionToken) {
       if (sessionToken !== playbackSessionId) return;
-      clearAudioTimers();
+      if (clipCutoffTimer) clearTimeout(clipCutoffTimer);
+      if (clipProgressInterval) clearInterval(clipProgressInterval);
 
       const transcriptEl = document.getElementById("radio-transcript");
       const bar = document.getElementById("clip-progress-bar");
@@ -614,19 +682,58 @@
       }, MAX_CLIP_DURATION_MS);
     }
 
-    function playDriverAnthem(driverId, driverName) {
+    async function playDriverAnthem(driverId, driverName) {
       stopAllAudio();
       const mySession = playbackSessionId;
       playPitwallBeep();
 
       const anthem = resolveDriverAnthem(driverId, driverName);
+      const labelText = `🎵 ${driverName}: "${anthem.hook}"`;
 
       const transcriptEl = document.getElementById("radio-transcript");
-      transcriptEl.innerHTML = `⏳ Loading ${driverName} Anthem...`;
+      transcriptEl.innerHTML = `⏳ Loading Ad-Free ${driverName} Anthem...`;
+
+      // Layer 1: Try Direct Ad-Free Audio Stream Extraction (Zero YouTube Ads)
+      const directAudioUrl = await resolveAdFreeAudioUrl(anthem.videoId);
+      if (mySession !== playbackSessionId) return;
+
+      if (directAudioUrl) {
+        try {
+          const audio = new Audio(directAudioUrl);
+          currentRadioAudio = audio;
+          audio.currentTime = anthem.start || 0;
+
+          audio.onplaying = () => {
+            if (mySession === playbackSessionId) {
+              startTenSecondCutoff(labelText, mySession);
+            }
+          };
+
+          audio.onerror = () => {
+            if (mySession === playbackSessionId) {
+              playFallbackNoCookieYouTube(anthem, labelText, mySession);
+            }
+          };
+
+          await audio.play();
+          return;
+        } catch (err) {
+          // If direct stream is blocked by browser CORS, fall through to Layer 2
+        }
+      }
+
+      // Layer 2: Fallback to YouTube-NoCookie Player with Instant Ad-Skipper Guard
+      playFallbackNoCookieYouTube(anthem, labelText, mySession);
+    }
+
+    function playFallbackNoCookieYouTube(anthem, labelText, mySession) {
+      if (mySession !== playbackSessionId) return;
+      const transcriptEl = document.getElementById("radio-transcript");
 
       if (ytPlayer && ytPlayerReady && typeof ytPlayer.loadVideoById === "function") {
         pendingYtSessionId = mySession;
-        pendingYtAnthemLabel = `🎵 ${driverName}: "${anthem.hook}"`;
+        pendingYtAnthemLabel = labelText;
+        pendingYtTargetStart = anthem.start || 0;
 
         ytPlayer.loadVideoById({
           videoId: anthem.videoId,
@@ -1141,7 +1248,6 @@
         const audio = new Audio(mp3Url);
         currentRadioAudio = audio;
 
-        // Track full-length audio progress naturally until it ends
         audio.ontimeupdate = () => {
           if (mySession !== playbackSessionId) return;
           if (audio.duration && isFinite(audio.duration)) {
