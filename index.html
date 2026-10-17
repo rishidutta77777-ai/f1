@@ -10,7 +10,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <!-- PWA Manifest & App Icons -->
+  <!-- PWA Manifest & Custom App Icon Links -->
   <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#0b0f19" id="meta-theme-color" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -18,16 +18,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="F1 Pitwall" />
 
-  <!-- Custom F1 Pitwall App Icon (Browser Tab + Apple Touch Icon) -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230b0f19'/><rect x='24' y='24' width='464' height='464' rx='95' fill='none' stroke='%23ef4444' stroke-width='20'/><path d='M90 190 L230 190 L200 245 L145 245 L135 270 L210 270 L185 320 L115 320 L90 375 L45 375 Z' fill='%23ef4444'/><path d='M255 190 L335 190 L265 375 L205 375 Z' fill='%23ffffff'/><text x='256' y='445' font-family='sans-serif' font-weight='900' font-size='54' fill='%23facc15' text-anchor='middle' letter-spacing='6'>PITWALL</text></svg>" />
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='115' fill='%230b0f19'/><rect x='24' y='24' width='464' height='464' rx='95' fill='none' stroke='%23ef4444' stroke-width='20'/><path d='M90 190 L230 190 L200 245 L145 245 L135 270 L210 270 L185 320 L115 320 L90 375 L45 375 Z' fill='%23ef4444'/><path d='M255 190 L335 190 L265 375 L205 375 Z' fill='%23ffffff'/><text x='256' y='445' font-family='sans-serif' font-weight='900' font-size='54' fill='%23facc15' text-anchor='middle' letter-spacing='6'>PITWALL</text></svg>" />
+  <!-- YOUR CUSTOM APP ICON IMAGE LINK -->
+  <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="apple-touch-icon" href="./icon.png" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      /* Default Theme: Red Bull Racing */
       --accent: #ef4444;
       --accent-sec: #facc15;
       --bg-card: #111827;
@@ -74,7 +73,6 @@
     .tab-btn:hover { color: #ffffff; background-color: #27272a; }
     .active-tab { background-color: var(--accent) !important; color: #ffffff !important; border-color: var(--accent) !important; }
 
-    /* Pirelli Tyre Ring Styling */
     .tyre-badge {
       display: inline-flex;
       align-items: center;
@@ -90,7 +88,6 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.6);
     }
 
-    /* Radio Equalizer Animation */
     @keyframes pulseBar {
       0%, 100% { transform: scaleY(0.3); }
       50% { transform: scaleY(1); }
@@ -118,7 +115,6 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs bg-zinc-950 px-2.5 py-1.5 rounded-lg border border-zinc-800 w-full sm:w-auto justify-between sm:justify-end">
-        <!-- Pinned Driver -->
         <div class="flex items-center">
           <span class="text-zinc-500 font-semibold">FAV:</span>
           <span id="pinned-driver" class="font-bold theme-sec-text ml-1 truncate max-w-[115px] sm:max-w-none">MAX (#1)</span>
@@ -126,7 +122,6 @@
         <span class="text-zinc-700">|</span>
 
         <div class="flex items-center gap-1.5">
-          <!-- Team Livery Theme Selector -->
           <select id="theme-selector" class="bg-zinc-900 text-zinc-200 font-semibold px-1.5 sm:px-2 py-1 rounded border border-zinc-700 focus:outline-none text-[11px] sm:text-xs">
             <option value="rbr">🔵 Red Bull Racing</option>
             <option value="ferrari">🔴 Scuderia Ferrari</option>
@@ -165,7 +160,6 @@
           </p>
         </div>
 
-        <!-- Live Countdown Box -->
         <div class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-3.5 w-full md:w-auto text-center shadow-inner">
           <p class="text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5">Lights Out Countdown</p>
           <div id="countdown" class="font-display text-xl md:text-3xl font-extrabold text-white tracking-wider flex justify-center gap-3">
@@ -190,9 +184,8 @@
       <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn flex-1 sm:flex-none">🏆 Standings</button>
     </div>
 
-    <!-- ================= TAB 1: SCHEDULE + LIVE TRACK WEATHER & TYRE RADAR ================= -->
+    <!-- ================= TAB 1: SCHEDULE + WEATHER ================= -->
     <section id="view-schedule" class="grid md:grid-cols-3 gap-6">
-      <!-- Left 2 Columns: Timetable -->
       <div class="md:col-span-2 theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex flex-wrap justify-between items-center gap-2">
           <div>
@@ -209,7 +202,6 @@
         <div id="session-list" class="space-y-2.5"></div>
       </div>
 
-      <!-- Right Column: Live Track Weather & Pirelli Tyre Strategy Radar -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between space-y-4">
         <div>
           <div class="flex justify-between items-center mb-3">
@@ -237,7 +229,6 @@
           </div>
         </div>
 
-        <!-- Pirelli Tyre Strategy Box -->
         <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
           <div class="flex justify-between items-center mb-2">
             <span class="text-xs font-bold uppercase tracking-wider text-zinc-400">Pirelli Compound Allocation</span>
@@ -266,7 +257,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: DRIVER HEAD-TO-HEAD TEAMMATE/RIVAL BATTLE ================= -->
+    <!-- ================= TAB 2: DRIVER H2H BATTLE ================= -->
     <section id="view-h2h" class="hidden theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-6 overflow-hidden">
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3.5 border-b border-zinc-800 pb-4">
         <div>
@@ -286,7 +277,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 3: "WHAT-IF" CHAMPIONSHIP POINTS SIMULATOR ================= -->
+    <!-- ================= TAB 3: POINTS SIMULATOR ================= -->
     <section id="view-simulator" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-center">
@@ -311,7 +302,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 4: LIVE FIA RACE CONTROL + TEAM RADIO SOUNDBOARD ================= -->
+    <!-- ================= TAB 4: RACE CONTROL & RADIO ================= -->
     <section id="view-radio" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-3 overflow-hidden">
         <div class="flex justify-between items-center">
@@ -355,7 +346,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 5: CURRENT WDC & WCC STANDINGS ================= -->
+    <!-- ================= TAB 5: STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
         <h3 class="font-display font-bold text-base mb-3">Drivers' Championship</h3>
@@ -388,22 +379,18 @@
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
-    // ================= PWA SERVICE WORKER + AUTO-UPDATE ENGINE =================
+    // Service Worker Auto-Update Registration
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
         try {
           const reg = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
-          // Check GitHub for updates every time the user opens or switches back to the app
           document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") reg.update();
           });
-        } catch (e) {
-          console.log("SW registration skipped:", e);
-        }
+        } catch (e) {}
       });
     }
 
-    // Native PWA Install Button Logic
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredInstallPrompt = e;
@@ -414,7 +401,6 @@
       if (btn) btn.style.display = "none";
     });
 
-    // Initialize App
     document.addEventListener("DOMContentLoaded", () => {
       initTheme();
       loadPinnedDriver();
@@ -424,7 +410,6 @@
       initRadioSoundboard();
       fetchLiveTeamRadio();
 
-      // Hide install button if already running inside the installed standalone PWA
       if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
         document.getElementById("pwa-install-btn").style.display = "none";
       }
@@ -435,7 +420,7 @@
           await deferredInstallPrompt.userChoice;
           deferredInstallPrompt = null;
         } else {
-          alert("To install F1 Pitwall Pro with its App Icon:\n\n1. Tap the Chrome ⋮ menu (top right)\n2. Tap 'Add to Home screen' or 'Install app'!");
+          alert("To install F1 Pitwall Pro as an App:\n\n1. Tap the Chrome menu (top right)\n2. Tap 'Add to Home screen' or 'Install app'!");
         }
       });
 
@@ -452,7 +437,6 @@
 
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
 
-      // Auto-refresh live weather, tyre radar & FIA race control every 60 seconds
       setInterval(() => {
         if (selectedRace) {
           fetchTrackWeather(selectedRace.Circuit.Location.lat, selectedRace.Circuit.Location.long);
@@ -461,7 +445,6 @@
       }, 60000);
     });
 
-    // ================= 1. THEME SWITCHER =================
     function initTheme() {
       const savedTheme = localStorage.getItem("f1_theme") || "rbr";
       document.body.setAttribute("data-theme", savedTheme);
@@ -473,7 +456,6 @@
       });
     }
 
-    // ================= 2. CALENDAR & WEATHER RADAR =================
     async function fetchSeasonData() {
       try {
         const res = await fetch(`${API_BASE}.json`);
@@ -620,7 +602,6 @@
       setTimeout(() => btn.textContent = "📲 Share", 2000);
     }
 
-    // ================= 3. STANDINGS, H2H BATTLE & SIMULATOR =================
     async function fetchStandingsAndH2H() {
       try {
         const [wdcRes, wccRes, resultsRes, qualiRes] = await Promise.all([
@@ -638,9 +619,7 @@
         renderStandings();
         initH2HSelectors();
         initSimulator();
-      } catch (e) {
-        console.error("Standings/H2H Load Error:", e);
-      }
+      } catch (e) {}
     }
 
     function renderStandings() {
@@ -750,7 +729,6 @@
       }).join("");
     }
 
-    // ================= 4. CHAMPIONSHIP POINTS SIMULATOR =================
     function initSimulator() {
       const container = document.getElementById("sim-selectors");
       const optionsHtml = `<option value="">-- Select Driver --</option>` + driversList.map(d =>
@@ -828,7 +806,6 @@
       initSimulator();
     }
 
-    // ================= 5. OPENF1 RACE CONTROL & 100% ORIGINAL AUDIO TEAM RADIO SOUNDBOARD =================
     function playPitwallBeep() {
       try {
         if (!sharedAudioCtx) {
