@@ -134,6 +134,35 @@
       border-color: #fca5a5 !important;
       box-shadow: 0 0 22px #ef4444, 0 0 40px rgba(239, 68, 68, 0.75) !important;
     }
+
+    /* Live Overtake Row Highlights & Carbon Steering Wheel */
+    .overtake-up-glow {
+      border-color: rgba(16, 185, 129, 0.85) !important;
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(9, 9, 11, 0.95) 100%) !important;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.25);
+    }
+    .overtake-down-glow {
+      border-color: rgba(239, 68, 68, 0.85) !important;
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(9, 9, 11, 0.95) 100%) !important;
+    }
+    .selected-driver-row {
+      border-color: var(--accent-sec) !important;
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.22);
+    }
+    .carbon-wheel {
+      background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
+      box-shadow: inset 0 0 28px rgba(0,0,0,0.9), 0 10px 30px rgba(0,0,0,0.65);
+    }
+    .rpm-led {
+      height: 10px;
+      flex: 1;
+      border-radius: 3px;
+      background-color: #27272a;
+      transition: background-color 0.08s ease, box-shadow 0.08s ease;
+    }
+    .rpm-led-green { background-color: #22c55e !important; box-shadow: 0 0 8px #22c55e; }
+    .rpm-led-red { background-color: #ef4444 !important; box-shadow: 0 0 8px #ef4444; }
+    .rpm-led-blue { background-color: #3b82f6 !important; box-shadow: 0 0 10px #3b82f6; }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-24">
@@ -249,6 +278,7 @@
     <!-- Navigation Tabs -->
     <div class="flex flex-wrap gap-1.5 sm:gap-2 border-b border-zinc-800 pb-3">
       <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn active-tab flex-1 sm:flex-none">📅 Weekend & Weather</button>
+      <button onclick="switchTab('telemetry')" id="tab-telemetry" class="tab-btn flex-1 sm:flex-none">🏎️ Live Telemetry</button>
       <button onclick="switchTab('h2h')" id="tab-h2h" class="tab-btn flex-1 sm:flex-none">🆚 Driver H2H Battle</button>
       <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn flex-1 sm:flex-none">🧮 Points Simulator</button>
       <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn flex-1 sm:flex-none">📻 Radio & Control</button>
@@ -329,7 +359,209 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: DRIVER H2H BATTLE ================= -->
+    <!-- ================= TAB 2: LIVE CAR TELEMETRY & FIA TIMING TOWER ================= -->
+    <section id="view-telemetry" class="hidden space-y-5">
+
+      <!-- Mode Switcher Bar (Auto Live Detection + Test Modes so you can preview Live Overtakes & Post-Race anytime!) -->
+      <div class="theme-card border border-zinc-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2">
+          <span id="telem-state-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="telem-state-badge" class="font-display font-bold text-xs sm:text-sm text-white">FIA TELEMETRYTRANSPONDER</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+          <button onclick="setTelemetryMode('auto')" id="tmode-auto" class="px-2.5 py-1 rounded-lg font-bold bg-red-600 text-white transition">
+            🔄 Auto Live
+          </button>
+          <button onclick="setTelemetryMode('standby')" id="tmode-standby" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 transition">
+            ⏳ Standby View
+          </button>
+          <button onclick="setTelemetryMode('live')" id="tmode-live" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-emerald-400 border border-zinc-700 hover:bg-zinc-800 transition">
+            🟢 Live Race + Overtakes
+          </button>
+          <button onclick="setTelemetryMode('post')" id="tmode-post" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-amber-400 border border-zinc-700 hover:bg-zinc-800 transition">
+            🏁 Post-Race Top 10
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE A: BEFORE RACE STANDBY SCREEN -->
+      <div id="telem-standby-panel" class="theme-card border border-zinc-800 rounded-2xl p-6 sm:p-10 text-center space-y-5 max-w-2xl mx-auto shadow-2xl">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-display font-bold">
+          📡 PITWALL TRANSPONDER STANDBY
+        </div>
+        <h3 class="font-display font-black text-xl sm:text-3xl text-white tracking-wide">
+          NO LIVE SESSION ON TRACK — COME BACK IN:
+        </h3>
+        <p id="telem-standby-gp-name" class="text-xs sm:text-sm text-zinc-400">
+          Waiting for cars to leave the pit lane for the next Grand Prix session...
+        </p>
+
+        <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-5 max-w-md mx-auto shadow-inner">
+          <p class="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Time Left Until Next GP Starts</p>
+          <div class="font-display text-2xl sm:text-4xl font-black text-white tracking-wider flex justify-center gap-3 sm:gap-4">
+            <div><span id="tcd-days">00</span><span class="block text-[9px] text-zinc-500">DAYS</span></div>
+            <span>:</span>
+            <div><span id="tcd-hours">00</span><span class="block text-[9px] text-zinc-500">HRS</span></div>
+            <span>:</span>
+            <div><span id="tcd-mins">00</span><span class="block text-[9px] text-zinc-500">MINS</span></div>
+            <span>:</span>
+            <div><span id="tcd-secs" class="theme-accent-text">00</span><span class="block text-[9px] text-zinc-500">SECS</span></div>
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <button onclick="setTelemetryMode('live')" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs px-5 py-3 rounded-xl shadow-lg transition">
+            🏎️ Launch Live Race & Steering Wheel Simulator Now →
+          </button>
+        </div>
+      </div>
+
+      <!-- STATE B: LIVE RACE FIA TIMING TOWER + F1 STEERING WHEEL TELEMETRY -->
+      <div id="telem-live-panel" class="hidden space-y-5">
+        <!-- FIA Top Lap & Track Status Banner -->
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-display font-black text-xs px-3 py-1 rounded-lg">
+              🟢 TRACK CLEAR • DRS ENABLED
+            </span>
+            <span id="fia-lap-counter" class="font-display font-black text-sm sm:text-base text-white tracking-wider">
+              LAP 42 / 56
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-zinc-400 hidden sm:inline">Tap any driver row to inspect Steering Wheel</span>
+            <button onclick="triggerSimulatedOvertake()" class="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-display font-bold text-[11px] px-3 py-1.5 rounded-lg border border-zinc-700 transition">
+              ⚡ Force Overtake Now
+            </button>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-12 gap-6 items-start">
+          <!-- Left 6 Cols: Animated FIA Live Timing Tower -->
+          <div class="lg:col-span-6 theme-card border border-zinc-800 rounded-xl p-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2.5">
+              <div>
+                <h4 class="font-display font-bold text-sm sm:text-base text-white">🗼 FIA Live Timing Tower</h4>
+                <p class="text-[11px] text-zinc-400">Watch green ▲ / red ▼ sliding overtakes • Tap a driver for cockpit wheel</p>
+              </div>
+              <span class="text-[10px] font-mono text-zinc-500">INTERVAL</span>
+            </div>
+
+            <div id="fia-timing-tower" class="space-y-2 relative"></div>
+          </div>
+
+          <!-- Right 6 Cols: Visual F1 Steering Wheel Telemetry Display -->
+          <div class="lg:col-span-6 theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 sticky top-20">
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-zinc-800 pb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-widest theme-sec-text block">COCKPIT STEERING WHEEL TELEMETRY</span>
+                <h4 id="wheel-driver-name" class="font-display font-black text-base sm:text-lg text-white">
+                  #16 Charles Leclerc (Ferrari)
+                </h4>
+              </div>
+              <span id="wheel-drs-badge" class="font-display font-black text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                DRS ACTIVE
+              </span>
+            </div>
+
+            <!-- Carbon-Fiber F1 Steering Wheel Rim -->
+            <div class="carbon-wheel rounded-3xl border-4 border-zinc-700/90 p-4 sm:p-6 space-y-5 relative">
+
+              <!-- 15-LED Shift Light Array across top of wheel -->
+              <div id="wheel-rpm-leds" class="flex items-center gap-1 bg-black/90 p-2 rounded-xl border border-zinc-800">
+                <div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div>
+                <div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div>
+                <div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div><div class="rpm-led"></div>
+              </div>
+
+              <!-- Center Multi-Function OLED Dash Screen -->
+              <div class="bg-zinc-950 border-2 border-zinc-800 rounded-2xl p-4 grid grid-cols-3 items-center text-center gap-2 shadow-inner">
+                <!-- Speed -->
+                <div>
+                  <span class="text-[10px] font-bold text-zinc-500 block">SPEED</span>
+                  <span id="wheel-speed" class="font-display font-black text-2xl sm:text-3xl text-white">314</span>
+                  <span class="text-[10px] font-mono text-zinc-400 block">KM/H</span>
+                </div>
+
+                <!-- Center Giant Gear Indicator -->
+                <div class="border-x border-zinc-800/90 px-2">
+                  <span class="text-[10px] font-bold text-zinc-500 block">GEAR</span>
+                  <span id="wheel-gear" class="font-display font-black text-4xl sm:text-6xl theme-sec-text leading-none">8</span>
+                </div>
+
+                <!-- RPM -->
+                <div>
+                  <span class="text-[10px] font-bold text-zinc-500 block">ENGINE RPM</span>
+                  <span id="wheel-rpm" class="font-display font-black text-lg sm:text-2xl text-red-400">11,840</span>
+                  <span class="text-[10px] font-mono text-zinc-400 block">REV/MIN</span>
+                </div>
+              </div>
+
+              <!-- Throttle & Brake Pressure Telemetry Bars -->
+              <div class="space-y-3 bg-black/60 p-3.5 rounded-xl border border-zinc-800/90">
+                <div>
+                  <div class="flex justify-between text-xs font-mono font-bold mb-1">
+                    <span class="text-emerald-400">THROTTLE PEDAL</span>
+                    <span id="wheel-throttle-txt" class="text-emerald-400">98%</span>
+                  </div>
+                  <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                    <div id="wheel-throttle-bar" class="h-full bg-emerald-500 transition-all duration-150" style="width: 98%"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs font-mono font-bold mb-1">
+                    <span class="text-red-400">BRAKE PRESSURE</span>
+                    <span id="wheel-brake-txt" class="text-red-400">0%</span>
+                  </div>
+                  <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                    <div id="wheel-brake-bar" class="h-full bg-red-600 transition-all duration-150" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rotary Knobs Decoration -->
+              <div class="flex justify-between items-center text-[10px] font-display font-bold text-zinc-500 pt-1">
+                <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">ERS: OVERTAKE</span>
+                <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">BBAL: 56.5%</span>
+                <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">DIFF: MID 4</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE C: POST-SESSION WINNERS PODIUM + TOP 10 CLASSIFICATION -->
+      <div id="telem-post-panel" class="hidden space-y-6">
+        <div class="theme-card border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-6">
+          <div class="text-center space-y-1">
+            <span class="text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">
+              🏁 CHECKERED FLAG — SESSION FINISHED
+            </span>
+            <h3 id="post-race-title" class="font-display font-black text-xl sm:text-3xl text-white pt-1">
+              GRAND PRIX PODIUM WINNERS
+            </h3>
+          </div>
+
+          <!-- Top 3 Podium Cards -->
+          <div id="post-podium-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto"></div>
+
+          <!-- Strictly Top 10 Finishers List Below -->
+          <div class="border-t border-zinc-800 pt-5 max-w-3xl mx-auto space-y-3">
+            <div class="flex justify-between items-center">
+              <h4 class="font-display font-bold text-sm sm:text-base text-white">🏆 Official Top 10 Classification</h4>
+              <span class="text-[11px] text-zinc-400 font-mono">POINTS FINISHERS ONLY</span>
+            </div>
+            <div id="post-top10-list" class="space-y-2 text-xs sm:text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 3: DRIVER H2H BATTLE ================= -->
     <section id="view-h2h" class="hidden theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-6 overflow-hidden">
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3.5 border-b border-zinc-800 pb-4">
         <div>
@@ -349,7 +581,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 3: POINTS SIMULATOR ================= -->
+    <!-- ================= TAB 4: POINTS SIMULATOR ================= -->
     <section id="view-simulator" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden">
         <div class="flex justify-between items-center">
@@ -374,7 +606,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 4: RADIO & RACE CONTROL ================= -->
+    <!-- ================= TAB 5: RADIO & RACE CONTROL ================= -->
     <section id="view-radio" class="hidden space-y-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg">
         <div class="flex-1 min-w-0">
@@ -438,7 +670,7 @@
       </div>
     </section>
 
-    <!-- ================= TAB 5: STANDINGS ================= -->
+    <!-- ================= TAB 6: STANDINGS ================= -->
     <section id="view-standings" class="hidden grid md:grid-cols-2 gap-6">
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 overflow-hidden">
         <div class="flex justify-between items-center mb-3">
@@ -453,11 +685,10 @@
       </div>
     </section>
 
-    <!-- ================= TAB 6: LIGHTS OUT REACTION TIME MINI-GAME ================= -->
+    <!-- ================= TAB 7: LIGHTS OUT REACTION TIME MINI-GAME ================= -->
     <section id="view-game" class="hidden space-y-6">
       <div class="theme-card border border-zinc-800 rounded-2xl p-4 sm:p-6 max-w-3xl mx-auto space-y-6 shadow-2xl">
         
-        <!-- Header & Personal Best Bar -->
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
           <div>
             <h3 class="font-display font-black text-lg sm:text-xl tracking-wide">🚦 FIA LIGHTS OUT REFLEX TEST</h3>
@@ -474,39 +705,31 @@
           </div>
         </div>
 
-        <!-- Interactive FIA 5-Light Gantry Tap Zone -->
         <div id="lights-tap-zone" onpointerdown="handleReactionZoneTap(event)" class="select-none cursor-pointer rounded-2xl bg-zinc-950 border-2 border-zinc-800 hover:border-zinc-700 p-5 sm:p-8 flex flex-col items-center justify-center space-y-6 transition-all shadow-inner min-h-[290px]">
           
-          <!-- 5-Column FIA Start Light Rig -->
           <div class="bg-zinc-900/95 border-2 border-zinc-800 rounded-2xl px-4 py-4 sm:px-7 sm:py-5 shadow-2xl flex items-center justify-center gap-3 sm:gap-5">
-            <!-- Column 1 -->
             <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
               <div class="f1-light-bulb" id="gantry-1a"></div>
               <div class="f1-light-bulb" id="gantry-1b"></div>
             </div>
-            <!-- Column 2 -->
             <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
               <div class="f1-light-bulb" id="gantry-2a"></div>
               <div class="f1-light-bulb" id="gantry-2b"></div>
             </div>
-            <!-- Column 3 -->
             <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
               <div class="f1-light-bulb" id="gantry-3a"></div>
               <div class="f1-light-bulb" id="gantry-3b"></div>
             </div>
-            <!-- Column 4 -->
             <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
               <div class="f1-light-bulb" id="gantry-4a"></div>
               <div class="f1-light-bulb" id="gantry-4b"></div>
             </div>
-            <!-- Column 5 -->
             <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
               <div class="f1-light-bulb" id="gantry-5a"></div>
               <div class="f1-light-bulb" id="gantry-5b"></div>
             </div>
           </div>
 
-          <!-- Big Live Reaction Readout -->
           <div class="text-center space-y-1.5">
             <div id="game-time-display" class="font-display font-black text-3xl sm:text-5xl tracking-wider text-white">
               TAP TO START
@@ -521,7 +744,6 @@
 
         </div>
 
-        <!-- Bottom Action & WhatsApp Challenge Bar -->
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
           <div class="text-xs text-zinc-400">
             💡 <span class="font-semibold text-zinc-200">Pro Tip:</span> Beat your previous personal best to trigger the <span class="theme-sec-text font-bold">New Record Telemetry Popup!</span>
@@ -540,12 +762,10 @@
   <div id="record-modal" onclick="if(event.target === this) closeRecordModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
     <div class="animate-modal relative w-full max-w-md rounded-2xl bg-zinc-950/95 backdrop-blur-xl border-2 border-amber-400/80 shadow-[0_0_40px_rgba(250,204,21,0.25)] overflow-hidden text-white p-5 sm:p-6 space-y-5">
       
-      <!-- Top Right Cross (✕) Close Button -->
       <button onclick="closeRecordModal()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-zinc-800/90 hover:bg-red-600 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm transition" title="Close Popup">
         ✕
       </button>
 
-      <!-- Trophy & Header -->
       <div class="text-center space-y-1.5 pt-1">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 text-[11px] font-display font-bold uppercase tracking-widest">
           🏆 NEW PERSONAL RECORD!
@@ -558,7 +778,6 @@
         </p>
       </div>
 
-      <!-- Reaction Time Telemetry Breakdown Box -->
       <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 text-center space-y-3">
         <div>
           <span class="text-[10px] uppercase tracking-widest text-zinc-400 block">NEW HIGH SCORE REACTION TIME</span>
@@ -579,7 +798,6 @@
         </div>
       </div>
 
-      <!-- Share on WhatsApp & Continue Buttons -->
       <div class="space-y-2.5">
         <button onclick="shareReactionOnWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs sm:text-sm py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
           📲 Share New Record on WhatsApp
@@ -816,11 +1034,32 @@
     let deferredInstallPrompt = null;
 
     // ================= LIGHTS OUT MINI-GAME STATE =================
-    let gameState = "idle"; // "idle" | "sequence" | "waiting" | "green"
+    let gameState = "idle";
     let gameTimers = [];
     let lightsOutTimestamp = 0;
     let lastReactionSec = null;
     let lastReactionTier = "";
+
+    // ================= LIVE TELEMETRY & FIA TIMING TOWER STATE =================
+    let telemetryMode = "auto"; // "auto" | "standby" | "live" | "post"
+    let liveTowerDrivers = [
+      { id: "verstappen", num: 1, code: "VER", name: "Max Verstappen", team: "Red Bull Racing", tyre: "M", gap: "LEADER", move: 0 },
+      { id: "leclerc", num: 16, code: "LEC", name: "Charles Leclerc", team: "Ferrari", tyre: "H", gap: "+1.142s", move: 0 },
+      { id: "antonelli", num: 12, code: "ANT", name: "Kimi Antonelli", team: "Mercedes", tyre: "M", gap: "+2.480s", move: 0 },
+      { id: "norris", num: 4, code: "NOR", name: "Lando Norris", team: "McLaren", tyre: "H", gap: "+3.915s", move: 0 },
+      { id: "hamilton", num: 44, code: "HAM", name: "Lewis Hamilton", team: "Ferrari", tyre: "M", gap: "+5.120s", move: 0 },
+      { id: "russell", num: 63, code: "RUS", name: "George Russell", team: "Mercedes", tyre: "H", gap: "+6.890s", move: 0 },
+      { id: "piastri", num: 81, code: "PIA", name: "Oscar Piastri", team: "McLaren", tyre: "M", gap: "+8.340s", move: 0 },
+      { id: "sainz", num: 55, code: "SAI", name: "Carlos Sainz", team: "Williams", tyre: "S", gap: "+11.210s", move: 0 },
+      { id: "alonso", num: 14, code: "ALO", name: "Fernando Alonso", team: "Aston Martin", tyre: "H", gap: "+14.605s", move: 0 },
+      { id: "gasly", num: 10, code: "GAS", name: "Pierre Gasly", team: "Alpine", tyre: "M", gap: "+17.920s", move: 0 }
+    ];
+    let selectedWheelDriver = liveTowerDrivers[1]; // Default Charles Leclerc #16
+    let wheelTelemetryTimer = null;
+    let overtakeSimTimer = null;
+    let currentSimLap = 42;
+    let totalSimLaps = 56;
+    let wheelPhase = 0;
 
     // ================= ALL 20+ DRIVER ANTHEMS =================
     const DRIVER_ANTHEMS_MAP = {
@@ -1020,6 +1259,7 @@
       fetchRaceControl();
       fetchLiveTeamRadio();
       initIconicRadioSection();
+      initTelemetryTab();
       prewarmAdFreeStreams();
 
       if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
@@ -1073,6 +1313,308 @@
         document.body.setAttribute("data-theme", e.target.value);
         localStorage.setItem("f1_theme", e.target.value);
       });
+    }
+
+    // ================= LIVE TELEMETRY, FLIP OVERTAKES & STEERING WHEEL ENGINE =================
+    function initTelemetryTab() {
+      renderTimingTower();
+      selectDriverForWheel(liveTowerDrivers[1].num);
+      evaluateTelemetryState();
+    }
+
+    function setTelemetryMode(mode) {
+      telemetryMode = mode;
+      ["auto", "standby", "live", "post"].forEach(m => {
+        const btn = document.getElementById(`tmode-${m}`);
+        if (!btn) return;
+        if (m === mode) {
+          btn.className = "px-2.5 py-1 rounded-lg font-bold bg-red-600 text-white transition";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 transition";
+        }
+      });
+      evaluateTelemetryState();
+    }
+
+    function detectAutoSessionPhase() {
+      if (!selectedRace) return "standby";
+      const now = new Date().getTime();
+      const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+      const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+
+      const sessionTimes = [];
+      if (selectedRace.FirstPractice) sessionTimes.push(new Date(`${selectedRace.FirstPractice.date}T${selectedRace.FirstPractice.time || '12:00:00Z'}`).getTime());
+      if (selectedRace.SecondPractice) sessionTimes.push(new Date(`${selectedRace.SecondPractice.date}T${selectedRace.SecondPractice.time || '15:00:00Z'}`).getTime());
+      if (selectedRace.SprintQualifying) sessionTimes.push(new Date(`${selectedRace.SprintQualifying.date}T${selectedRace.SprintQualifying.time || '15:00:00Z'}`).getTime());
+      if (selectedRace.ThirdPractice) sessionTimes.push(new Date(`${selectedRace.ThirdPractice.date}T${selectedRace.ThirdPractice.time || '12:00:00Z'}`).getTime());
+      if (selectedRace.Sprint) sessionTimes.push(new Date(`${selectedRace.Sprint.date}T${selectedRace.Sprint.time || '15:00:00Z'}`).getTime());
+      if (selectedRace.Qualifying) sessionTimes.push(new Date(`${selectedRace.Qualifying.date}T${selectedRace.Qualifying.time || '15:00:00Z'}`).getTime());
+      const gpStart = new Date(`${selectedRace.date}T${selectedRace.time || '14:00:00Z'}`).getTime();
+      sessionTimes.push(gpStart);
+
+      // Check if any session is currently on track (within 2 hours of start)
+      const isLiveNow = sessionTimes.some(st => now >= st && now <= st + TWO_HOURS_MS);
+      if (isLiveNow) return "live";
+
+      // Check if Grand Prix finished within the last 6 hours
+      if (now > gpStart + TWO_HOURS_MS && now <= gpStart + SIX_HOURS_MS) return "post";
+
+      return "standby";
+    }
+
+    function evaluateTelemetryState() {
+      const effectiveState = telemetryMode === "auto" ? detectAutoSessionPhase() : telemetryMode;
+
+      const standbyPanel = document.getElementById("telem-standby-panel");
+      const livePanel = document.getElementById("telem-live-panel");
+      const postPanel = document.getElementById("telem-post-panel");
+      const badge = document.getElementById("telem-state-badge");
+      const dot = document.getElementById("telem-state-dot");
+
+      standbyPanel.classList.toggle("hidden", effectiveState !== "standby");
+      livePanel.classList.toggle("hidden", effectiveState !== "live");
+      postPanel.classList.toggle("hidden", effectiveState !== "post");
+
+      if (wheelTelemetryTimer) { clearInterval(wheelTelemetryTimer); wheelTelemetryTimer = null; }
+      if (overtakeSimTimer) { clearInterval(overtakeSimTimer); overtakeSimTimer = null; }
+
+      if (effectiveState === "standby") {
+        badge.textContent = "⏳ PRE-RACE STANDBY — WAITING FOR LIGHTS OUT";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+        if (selectedRace) {
+          document.getElementById("telem-standby-gp-name").textContent =
+            `Next On-Track Session: ${selectedRace.raceName} (${selectedRace.Circuit.circuitName})`;
+        }
+      } else if (effectiveState === "live") {
+        badge.textContent = "🟢 LIVE FIA TIMING TOWER & STEERING WHEEL TELEMETRY";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
+        const specs = selectedRace ? getCircuitTelemetry(selectedRace) : null;
+        totalSimLaps = specs ? parseInt(specs.laps) || 56 : 56;
+        document.getElementById("fia-lap-counter").textContent = `LAP ${currentSimLap} / ${totalSimLaps}`;
+        renderTimingTower();
+        startWheelTelemetryLoop();
+        overtakeSimTimer = setInterval(triggerSimulatedOvertake, 4800);
+      } else if (effectiveState === "post") {
+        badge.textContent = "🏁 SESSION ENDED — PODIUM WINNERS & TOP 10";
+        dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
+        renderPostSessionTop10();
+      }
+    }
+
+    function renderTimingTower() {
+      const tower = document.getElementById("fia-timing-tower");
+      if (!tower) return;
+
+      tower.innerHTML = liveTowerDrivers.map((d, idx) => {
+        const pos = idx + 1;
+        const isSelected = selectedWheelDriver && selectedWheelDriver.num === d.num;
+        const tyreColor = d.tyre === "S" ? "border-red-500 text-red-400" :
+                          d.tyre === "M" ? "border-yellow-400 text-yellow-300" :
+                          "border-white text-white";
+
+        const moveBadge = d.move > 0
+          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-display font-black text-[11px] animate-bounce">▲${d.move}</span>`
+          : d.move < 0
+          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-display font-black text-[11px]">▼${Math.abs(d.move)}</span>`
+          : `<span class="text-zinc-600 font-mono text-xs w-5 text-center">•</span>`;
+
+        const glowClass = d.move > 0 ? "overtake-up-glow" : d.move < 0 ? "overtake-down-glow" : "";
+
+        return `
+          <div data-driver-num="${d.num}" onclick="selectDriverForWheel(${d.num})" class="tower-row cursor-pointer bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between gap-2 transition-colors ${glowClass} ${isSelected ? 'selected-driver-row' : ''}">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="font-display font-black text-xs w-6 text-zinc-400">P${pos}</span>
+              ${moveBadge}
+              <span class="font-display font-bold text-xs px-1.5 py-0.5 rounded bg-zinc-900 text-white border border-zinc-700">${d.code}</span>
+              <div class="min-w-0 truncate">
+                <span class="font-bold text-xs sm:text-sm text-white block truncate">${d.name}</span>
+                <span class="text-[10px] text-zinc-500 block truncate">${d.team}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 shrink-0">
+              <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
+              <span class="font-mono font-bold text-xs text-zinc-300 w-16 text-right">${idx === 0 ? 'LEADER' : d.gap}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Smooth FLIP DOM Animation when one driver overtakes another!
+    function triggerSimulatedOvertake() {
+      const tower = document.getElementById("fia-timing-tower");
+      if (!tower || liveTowerDrivers.length < 2) return;
+
+      // 1. Record FIRST bounding boxes before overtake
+      const prevRects = {};
+      tower.querySelectorAll(".tower-row").forEach(row => {
+        prevRects[row.getAttribute("data-driver-num")] = row.getBoundingClientRect().top;
+      });
+
+      // Reset old move badges
+      liveTowerDrivers.forEach(d => d.move = 0);
+
+      // Pick random pair to swap (e.g. P2 overtakes P1, or P4 overtakes P3)
+      const idx = Math.floor(1 + Math.random() * (liveTowerDrivers.length - 1));
+      const overtaker = liveTowerDrivers[idx];
+      const overtaken = liveTowerDrivers[idx - 1];
+
+      overtaker.move = 1;
+      overtaken.move = -1;
+
+      // Swap positions in array
+      liveTowerDrivers[idx - 1] = overtaker;
+      liveTowerDrivers[idx] = overtaken;
+
+      // Recalculate clean intervals
+      liveTowerDrivers.forEach((d, i) => {
+        if (i === 0) d.gap = "LEADER";
+        else d.gap = `+${(i * 1.18 + Math.random() * 0.45).toFixed(3)}s`;
+      });
+
+      if (currentSimLap < totalSimLaps && Math.random() > 0.65) {
+        currentSimLap++;
+        document.getElementById("fia-lap-counter").textContent = `LAP ${currentSimLap} / ${totalSimLaps}`;
+      }
+
+      // 2. Render updated DOM
+      renderTimingTower();
+
+      // 3. Apply FLIP Invert & Play Smooth Slide Animation
+      tower.querySelectorAll(".tower-row").forEach(row => {
+        const num = row.getAttribute("data-driver-num");
+        const oldTop = prevRects[num];
+        if (oldTop !== undefined) {
+          const newTop = row.getBoundingClientRect().top;
+          const deltaY = oldTop - newTop;
+          if (Math.abs(deltaY) > 1) {
+            row.style.transition = "none";
+            row.style.transform = `translateY(${deltaY}px)`;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                row.style.transition = "transform 520ms cubic-bezier(0.22, 1, 0.36, 1)";
+                row.style.transform = "translateY(0)";
+              });
+            });
+          }
+        }
+      });
+    }
+
+    function selectDriverForWheel(driverNum) {
+      const found = liveTowerDrivers.find(d => d.num === driverNum) || liveTowerDrivers[0];
+      selectedWheelDriver = found;
+      document.getElementById("wheel-driver-name").textContent = `#${found.num} ${found.name} (${found.team})`;
+      renderTimingTower();
+      updateSteeringWheelMetrics();
+    }
+
+    function startWheelTelemetryLoop() {
+      if (wheelTelemetryTimer) clearInterval(wheelTelemetryTimer);
+      updateSteeringWheelMetrics();
+      wheelTelemetryTimer = setInterval(updateSteeringWheelMetrics, 220);
+    }
+
+    async function updateSteeringWheelMetrics() {
+      if (!selectedWheelDriver) return;
+
+      // Realistic F1 cornering -> straight-line telemetry physics cycle
+      wheelPhase = (wheelPhase + 0.22) % (Math.PI * 2);
+      const wave = (Math.sin(wheelPhase) + 1) / 2; // 0.0 (hairpin apex) to 1.0 (main straight)
+
+      let speed, gear, rpm, throttle, brake, drsOn;
+
+      if (wave > 0.28) {
+        // Accelerating / Full Straight
+        throttle = Math.min(100, Math.round(65 + wave * 40));
+        brake = 0;
+        speed = Math.round(145 + wave * 188);
+        gear = Math.min(8, Math.max(2, Math.floor(speed / 41) + 1));
+        rpm = Math.round(10100 + ((speed * 37) % 3150));
+        drsOn = speed > 292;
+      } else {
+        // Heavy Braking Zone into Corner Apex
+        throttle = 0;
+        brake = Math.min(100, Math.round((0.3 - wave) * 340));
+        speed = Math.round(88 + wave * 210);
+        gear = Math.max(2, Math.floor(speed / 42) + 1);
+        rpm = Math.round(8600 + wave * 4200);
+        drsOn = false;
+      }
+
+      document.getElementById("wheel-speed").textContent = speed;
+      document.getElementById("wheel-gear").textContent = gear;
+      document.getElementById("wheel-rpm").textContent = rpm.toLocaleString();
+      document.getElementById("wheel-throttle-txt").textContent = `${throttle}%`;
+      document.getElementById("wheel-throttle-bar").style.width = `${throttle}%`;
+      document.getElementById("wheel-brake-txt").textContent = `${brake}%`;
+      document.getElementById("wheel-brake-bar").style.width = `${brake}%`;
+
+      const drsBadge = document.getElementById("wheel-drs-badge");
+      if (drsOn) {
+        drsBadge.textContent = "DRS OPEN";
+        drsBadge.className = "font-display font-black text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/50";
+      } else {
+        drsBadge.textContent = "DRS CLOSED";
+        drsBadge.className = "font-display font-black text-xs px-2.5 py-1 rounded bg-zinc-900 text-zinc-500 border border-zinc-800";
+      }
+
+      // Update 15 Shift LEDs (5 Green -> 5 Red -> 5 Blue)
+      const leds = document.querySelectorAll("#wheel-rpm-leds .rpm-led");
+      const activeLedCount = Math.min(15, Math.max(1, Math.round(((rpm - 8000) / 5200) * 15)));
+      leds.forEach((led, idx) => {
+        led.className = "rpm-led";
+        if (idx < activeLedCount) {
+          if (idx < 5) led.classList.add("rpm-led-green");
+          else if (idx < 10) led.classList.add("rpm-led-red");
+          else led.classList.add("rpm-led-blue");
+        }
+      });
+    }
+
+    function renderPostSessionTop10() {
+      const lastRace = allRaceResults.length > 0 ? allRaceResults[allRaceResults.length - 1] : null;
+      const results = lastRace?.Results?.slice(0, 10) || liveTowerDrivers.slice(0, 10).map((d, i) => ({
+        position: String(i + 1),
+        points: String(F1_POINTS[i] || 0),
+        Driver: { givenName: d.name.split(" ")[0], familyName: d.name.split(" ").slice(1).join(" ") },
+        Constructor: { name: d.team },
+        Time: { time: i === 0 ? "1:32:14.812" : d.gap }
+      }));
+
+      if (lastRace) {
+        document.getElementById("post-race-title").textContent = `${lastRace.raceName.toUpperCase()} — WINNERS & TOP 10`;
+      }
+
+      const podium = results.slice(0, 3);
+      const medals = ["🥇 P1 WINNER", "🥈 P2 SECOND", "🥉 P3 THIRD"];
+      const borders = ["border-amber-400/80 bg-amber-500/10", "border-zinc-300/60 bg-zinc-400/10", "border-amber-700/70 bg-amber-800/10"];
+
+      document.getElementById("post-podium-cards").innerHTML = podium.map((r, idx) => `
+        <div class="rounded-2xl border-2 ${borders[idx]} p-4 text-center space-y-1.5 shadow-lg">
+          <span class="font-display font-black text-xs theme-sec-text block">${medals[idx]}</span>
+          <h5 class="font-display font-black text-base sm:text-lg text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</h5>
+          <p class="text-xs text-zinc-400 font-semibold">${r.Constructor.name}</p>
+          <span class="inline-block font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
+            +${r.points} PTS • ${r.Time?.time || 'Finished'}
+          </span>
+        </div>
+      `).join("");
+
+      document.getElementById("post-top10-list").innerHTML = results.slice(0, 10).map((r) => `
+        <div class="flex justify-between items-center bg-zinc-950 p-3 rounded-xl border border-zinc-800 gap-2">
+          <div class="flex items-center gap-2.5 min-w-0 truncate">
+            <span class="font-display font-black text-xs w-7 text-zinc-400">P${r.position}</span>
+            <span class="font-bold text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</span>
+            <span class="text-[11px] text-zinc-500 truncate">(${r.Constructor.name})</span>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 font-mono">
+            <span class="text-xs text-zinc-400 hidden sm:inline">${r.Time?.time || 'Finished'}</span>
+            <span class="font-bold theme-accent-text">+${r.points} PTS</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     // ================= LIGHTS OUT REACTION MINI-GAME LOGIC =================
@@ -1144,7 +1686,6 @@
       const rankDisplay = document.getElementById("game-driver-rank");
       const zone = document.getElementById("lights-tap-zone");
 
-      // STATE 1: Idle -> Start the 5-light sequence
       if (gameState === "idle") {
         gameState = "sequence";
         clearGameTimers();
@@ -1162,7 +1703,6 @@
             setGantryColumnLight(col, true);
             playStartGantryTone(780, 0.12);
 
-            // Once 5th light is on, hold for random 0.45s - 3.1s before Lights Out
             if (col === 5) {
               gameState = "waiting";
               const randomDelay = Math.floor(450 + Math.random() * 2650);
@@ -1183,7 +1723,6 @@
         return;
       }
 
-      // STATE 2: Tapped too early while red lights are still on -> JUMP START!
       if (gameState === "sequence" || gameState === "waiting") {
         clearGameTimers();
         resetAllGantryLights();
@@ -1200,7 +1739,6 @@
         return;
       }
 
-      // STATE 3: Valid reaction after Lights Out!
       if (gameState === "green") {
         const reactionMs = Math.max(1, Math.round(performance.now() - lightsOutTimestamp));
         const reactionSec = reactionMs / 1000;
@@ -1219,7 +1757,6 @@
         subDisplay.textContent = "Tap anywhere in the box to test your reflexes again";
         rankDisplay.textContent = tier;
 
-        // Check if this is a New Personal Record!
         const prevBestRaw = localStorage.getItem("f1_best_reaction_ms");
         const prevBestMs = prevBestRaw ? parseFloat(prevBestRaw) : null;
 
@@ -1713,6 +2250,7 @@
       document.getElementById("race-circuit").textContent = `${race.Circuit.circuitName} — ${race.Circuit.Location.locality}, ${race.Circuit.Location.country}`;
 
       updateTrackMapAndModalUI(race);
+      evaluateTelemetryState();
 
       const sessions = [];
       if (race.FirstPractice) sessions.push({ name: "Free Practice 1", ...race.FirstPractice });
@@ -1825,13 +2363,29 @@
         }
 
         if (diff <= 0) {
-          ["cd-days", "cd-hours", "cd-mins", "cd-secs"].forEach(id => document.getElementById(id).textContent = "00");
+          ["cd-days", "cd-hours", "cd-mins", "cd-secs", "tcd-days", "tcd-hours", "tcd-mins", "tcd-secs"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "00";
+          });
           return;
         }
-        document.getElementById("cd-days").textContent = String(Math.floor(diff / 86400000)).padStart(2, '0');
-        document.getElementById("cd-hours").textContent = String(Math.floor((diff / 3600000) % 24)).padStart(2, '0');
-        document.getElementById("cd-mins").textContent = String(Math.floor((diff / 60000) % 60)).padStart(2, '0');
-        document.getElementById("cd-secs").textContent = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+        const dStr = String(Math.floor(diff / 86400000)).padStart(2, '0');
+        const hStr = String(Math.floor((diff / 3600000) % 24)).padStart(2, '0');
+        const mStr = String(Math.floor((diff / 60000) % 60)).padStart(2, '0');
+        const sStr = String(Math.floor((diff / 1000) % 60)).padStart(2, '0');
+
+        document.getElementById("cd-days").textContent = dStr;
+        document.getElementById("cd-hours").textContent = hStr;
+        document.getElementById("cd-mins").textContent = mStr;
+        document.getElementById("cd-secs").textContent = sStr;
+
+        const td = document.getElementById("tcd-days");
+        if (td) {
+          td.textContent = dStr;
+          document.getElementById("tcd-hours").textContent = hStr;
+          document.getElementById("tcd-mins").textContent = mStr;
+          document.getElementById("tcd-secs").textContent = sStr;
+        }
       };
       update();
       countdownTimer = setInterval(update, 1000);
@@ -2229,10 +2783,13 @@
     }
 
     function switchTab(tab) {
-      ["schedule", "h2h", "simulator", "radio", "standings", "game"].forEach(t => {
+      ["schedule", "telemetry", "h2h", "simulator", "radio", "standings", "game"].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
         document.getElementById(`tab-${t}`).classList.toggle("active-tab", t === tab);
       });
+      if (tab === "telemetry") {
+        evaluateTelemetryState();
+      }
     }
   </script>
 </body>
