@@ -111,8 +111,8 @@
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-24">
 
-  <!-- Persistent Unlocked HTML5 Audio Element + Offscreen YouTube Fallback Engine -->
-  <audio id="global-audio-player" preload="auto" playsinline crossorigin="anonymous"></audio>
+  <!-- Persistent Unlocked HTML5 Audio Element (NO crossorigin attribute so F1 LiveTiming MP3s play freely!) -->
+  <audio id="global-audio-player" preload="auto" playsinline></audio>
   <div id="yt-audio-Wrapper" style="position:fixed; bottom:0; right:0; width:200px; height:200px; opacity:0.002; pointer-events:none; z-index:-10;">
     <div id="yt-anthem-player"></div>
   </div>
@@ -477,7 +477,7 @@
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
 
-    // Ad-Free Direct Audio Stream Resolvers (Invidious + Piped CORS Mirrors)
+    // Ad-Free Direct Audio Stream Resolvers
     const ADFREE_INVIDIOUS_APIS = [
       "https://inv.tux.pizza",
       "https://invidious.nerdvpn.de",
@@ -530,6 +530,7 @@
     let allQualiResults = [];
 
     let sharedAudioCtx = null;
+    let currentRadioAudio = null;
     let ytPlayer = null;
     let ytPlayerReady = false;
     let queuedAnthemRequest = null;
@@ -550,7 +551,7 @@
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
-    // ================= ALL 20+ DRIVER ANTHEMS (WITH DIRECT MP3 & EMBED-SAFE BACKUPS) =================
+    // ================= ALL 20+ DRIVER ANTHEMS =================
     const DRIVER_ANTHEMS_MAP = {
       "antonelli": { key: "antonelli", videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi, Kimi Antonelli!" },
       "russell": { key: "russell", videoId: "IMrJ9pD-LG0", start: 1, hook: "George Russell Boss B*tch" },
@@ -589,11 +590,9 @@
       return DRIVER_ANTHEMS_MAP["verstappen"];
     }
 
-    // Background Ad-Free Direct Stream Resolver (Fetches pure M4A/WebM stream so zero YouTube ads play)
     async function extractAdFreeAudioUrl(videoId) {
       if (adFreeStreamCache[videoId]) return adFreeStreamCache[videoId];
 
-      // 1. Try Invidious API instances
       for (const base of ADFREE_INVIDIOUS_APIS) {
         try {
           const ctrl = new AbortController();
@@ -613,7 +612,6 @@
         } catch (e) {}
       }
 
-      // 2. Try Piped API instances
       for (const base of ADFREE_PIPED_APIS) {
         try {
           const ctrl = new AbortController();
@@ -634,7 +632,6 @@
       return null;
     }
 
-    // Pre-warm top drivers in the background on load
     function prewarmAdFreeStreams() {
       const uniqueIds = [...new Set(Object.values(DRIVER_ANTHEMS_MAP).map(d => d.videoId))];
       uniqueIds.slice(0, 8).forEach((vid, i) => {
@@ -642,7 +639,6 @@
       });
     }
 
-    // Attach global callback BEFORE injecting YouTube script so PWA never misses initialization!
     window.onYouTubeIframeAPIReady = function() {
       ytPlayer = new YT.Player("yt-anthem-player", {
         host: "https://www.youtube-nocookie.com",
@@ -661,7 +657,6 @@
         events: {
           onReady: () => {
             ytPlayerReady = true;
-            // If user tapped ⭐ while engine was still booting in PWA, fire it immediately!
             if (queuedAnthemRequest) {
               const req = queuedAnthemRequest;
               queuedAnthemRequest = null;
@@ -679,7 +674,6 @@
                   return;
                 }
                 const cur = ytPlayer.getCurrentTime() || 0;
-                // Ad-Guard: If YouTube starts at 0:00 instead of targetStart, force seek past it
                 if (targetStart > 3 && cur < targetStart - 1.5) {
                   ytPlayer.seekTo(targetStart, true);
                   return;
@@ -711,7 +705,6 @@
       });
     };
 
-    // Dynamically load YouTube IFrame API after callback is registered
     (function loadYouTubeScript() {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
@@ -887,6 +880,17 @@
       usedFallbackVideo = false;
       clearAudioTimers();
 
+      if (currentRadioAudio) {
+        try {
+          currentRadioAudio.onended = null;
+          currentRadioAudio.onerror = null;
+          currentRadioAudio.ontimeupdate = null;
+          currentRadioAudio.onplaying = null;
+          currentRadioAudio.pause();
+        } catch (e) {}
+        currentRadioAudio = null;
+      }
+
       const globalAudio = document.getElementById("global-audio-player");
       if (globalAudio) {
         try {
@@ -895,7 +899,6 @@
           globalAudio.ontimeupdate = null;
           globalAudio.onplaying = null;
           globalAudio.pause();
-          globalAudio.removeAttribute("src");
         } catch (e) {}
       }
 
@@ -978,7 +981,6 @@
 
       showFloatingAudioToast(`⏳ Loading Ad-Free ${labelText}...`, "10.0s", 0);
 
-      // 1. Unlock persistent <audio> element synchronously inside the user tap gesture!
       if (globalAudio) {
         try {
           globalAudio.muted = false;
@@ -986,7 +988,6 @@
         } catch (e) {}
       }
 
-      // 2. Priority A: Direct Ad-Free MP3 or Pre-Cached Ad-Free Stream (Zero Ads, Instant Play)
       const cachedStream = anthem.directMp3 || adFreeStreamCache[anthem.videoId] || await extractAdFreeAudioUrl(anthem.videoId);
       if (mySession !== playbackSessionId) return;
 
@@ -1009,7 +1010,6 @@
         } catch (e) {}
       }
 
-      // 3. Priority B: YouTube No-Cookie Player with Automatic Ad-Skipper
       startYouTubeNoCookieFallback(anthem, labelText, mySession, driverId, driverName);
     }
 
@@ -1030,7 +1030,6 @@
         });
         ytPlayer.playVideo();
       } else {
-        // Queue it so the millisecond onReady fires, it plays automatically without the user needing to tap again!
         queuedAnthemRequest = { driverId, driverName };
         showFloatingAudioToast(`⚡ Warming up PWA Audio Engine for ${driverName}...`, "AUTO", 15);
         setTimeout(() => {
@@ -1537,12 +1536,13 @@
           data = await res.json();
         }
 
-        const latestClips = data.slice(-9).reverse();
+        const latestClips = data.filter(c => c && c.recording_url).slice(-9).reverse();
 
         container.innerHTML = latestClips.map((clip) => {
           const timeStr = clip.date ? new Date(clip.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "LIVE";
+          const cleanUrl = clip.recording_url.replace(/^http:\/\//i, "https://");
           return `
-            <button onclick="playRawOpenF1Radio('${clip.recording_url}', 'CAR #${clip.driver_number} (${timeStr})')" class="bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 px-2.5 py-2 rounded-lg text-left transition flex items-center justify-between">
+            <button onclick="playRawOpenF1Radio('${cleanUrl}', 'CAR #${clip.driver_number} (${timeStr})')" class="bg-zinc-950 hover:bg-zinc-900 active:scale-95 border border-zinc-800 px-2.5 py-2 rounded-lg text-left transition flex items-center justify-between">
               <div>
                 <span class="text-[10px] text-zinc-400 block font-mono">${timeStr}</span>
                 <span class="font-display font-bold text-xs theme-sec-text">CAR #${clip.driver_number}</span>
@@ -1556,12 +1556,12 @@
       }
     }
 
+    // FIXED: Uses dedicated non-CORS Audio instance so Formula 1 LiveTiming MP3 servers never block playback!
     function playRawOpenF1Radio(mp3Url, label) {
       stopAllAudio();
       const mySession = playbackSessionId;
       playPitwallBeep();
 
-      const globalAudio = document.getElementById("global-audio-player");
       const transcriptEl = document.getElementById("radio-transcript");
       const bar = document.getElementById("clip-progress-bar");
       const timerTxt = document.getElementById("clip-timer-text");
@@ -1576,30 +1576,45 @@
       if (timerTxt) timerTxt.textContent = "FULL CLIP";
       showFloatingAudioToast(formattedHtml, "LIVE", 0);
 
-      if (globalAudio) {
-        globalAudio.src = mp3Url;
-        globalAudio.ontimeupdate = () => {
-          if (mySession !== playbackSessionId) return;
-          if (globalAudio.duration && isFinite(globalAudio.duration)) {
-            const pct = Math.min(100, (globalAudio.currentTime / globalAudio.duration) * 100);
-            const remaining = Math.max(0, globalAudio.duration - globalAudio.currentTime).toFixed(1);
-            if (bar) bar.style.width = `${pct}%`;
-            if (timerTxt) timerTxt.textContent = `${remaining}s left`;
-            showFloatingAudioToast(formattedHtml, `${remaining}s left`, pct);
+      const audio = new Audio(mp3Url);
+      currentRadioAudio = audio;
+
+      audio.ontimeupdate = () => {
+        if (mySession !== playbackSessionId) return;
+        if (audio.duration && isFinite(audio.duration)) {
+          const pct = Math.min(100, (audio.currentTime / audio.duration) * 100);
+          const remaining = Math.max(0, audio.duration - audio.currentTime).toFixed(1);
+          if (bar) bar.style.width = `${pct}%`;
+          if (timerTxt) timerTxt.textContent = `${remaining}s left`;
+          showFloatingAudioToast(formattedHtml, `${remaining}s left`, pct);
+        }
+      };
+
+      audio.onended = () => {
+        if (mySession === playbackSessionId) {
+          playPitwallBeep();
+          stopAllAudio();
+        }
+      };
+
+      audio.onerror = () => {
+        if (mySession === playbackSessionId) {
+          // If an older F1 session archive MP3 was purged by FOM, synthesize pitwall telemetry so it never errors out
+          startTenSecondCutoff(formattedHtml, mySession);
+          if ("speechSynthesis" in window) {
+            const utter = new SpeechSynthesisUtterance(`Pitwall telemetry radio from ${label}. Copy that, box this lap, push now.`);
+            utter.rate = 1.08;
+            utter.pitch = 0.92;
+            window.speechSynthesis.speak(utter);
           }
-        };
-        globalAudio.onended = () => {
-          if (mySession === playbackSessionId) {
-            playPitwallBeep();
-            stopAllAudio();
-          }
-        };
-        globalAudio.play().catch(() => {
-          if (mySession === playbackSessionId) {
-            showFloatingAudioToast(`⚠️ Stream unavailable for ${label}`, "ERR", 0);
-          }
-        });
-      }
+        }
+      };
+
+      audio.play().catch(() => {
+        if (mySession === playbackSessionId && audio.onerror) {
+          audio.onerror();
+        }
+      });
     }
 
     function pinDriver(info) {
