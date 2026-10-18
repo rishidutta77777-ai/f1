@@ -400,12 +400,12 @@
         </div>
       </div>
 
-      <!-- SOME ICONIC F1 RADIO MESSAGE (100% ORIGINAL BROADCAST AUDIO) -->
+      <!-- SOME ICONIC F1 RADIO MESSAGE -->
       <div class="theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 overflow-hidden shadow-lg">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-zinc-800 pb-3">
           <div>
             <h3 class="font-display font-bold text-base md:text-lg tracking-wide">📻 SOME ICONIC F1 RADIO MESSAGE</h3>
-            <p class="text-xs text-zinc-400">Tap any legendary transmission below to play the original F1 broadcast audio (Zero Bot Voice)</p>
+            <p class="text-xs text-zinc-400">Tap any legendary transmission below to play the original F1 broadcast audio</p>
           </div>
           <span class="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full font-display font-bold">
             7 LEGENDARY CLIPS
@@ -498,7 +498,6 @@
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
 
-    // Ad-Free Direct Audio Stream Resolvers (Used strictly for background pre-warming)
     const ADFREE_INVIDIOUS_APIS = [
       "https://inv.tux.pizza",
       "https://invidious.nerdvpn.de",
@@ -539,7 +538,7 @@
       "yas_marina": { country: "Abu Dhabi", flag: "🇦🇪", mapSlug: "Abu_Dhabi_Circuit", length: "5.281km", firstGp: "2009", laps: "58", distance: "306.183km", lapRecord: "1:26.103", recordHolder: "Max Verstappen (2021)" }
     };
 
-    // ================= 7 ICONIC F1 RADIO MESSAGES (VERIFIED ORIGINAL BROADCAST STREAMS — ZERO BOT VOICE) =================
+    // ================= 7 ICONIC F1 RADIO MESSAGES (LOCAL MP3 + MULTI-MIRROR) =================
     const ICONIC_RADIO_MESSAGES = [
       {
         id: 1,
@@ -586,36 +585,40 @@
         driver: "Felipe Massa",
         team: "Ferrari • Germany 2010",
         title: "Fernando is faster than you. Can you confirm you understood that message?",
-        durationSec: 9,
-        // Verified Original Germany 2010 Rob Smedley -> Felipe Massa Broadcast Audio
+        durationSec: 11,
+        localCandidates: [
+          "./massa.mp3",
+          "./audio-editor-output.mp3"
+        ],
         videoId: "qM8BM2bf19E",
-        fallbackId: "2yH4N3-22G4",
-        start: 1,
-        fallbackStart: 0
+        start: 1
       },
       {
         id: 6,
         driver: "Kimi Räikkönen",
         team: "Ferrari • Baku 2017",
         title: "The steering wheel! Yeah, give me the steering wheel! Hey! HEY! Steering wheel, somebody tell him to give it to me! COME ON!",
-        durationSec: 10,
-        // Verified Original Baku 2017 Kimi Steering Wheel Broadcast Audio
+        durationSec: 17,
+        localCandidates: [
+          "./kimi.mp3",
+          "./2.9M views · 10K reactions ｜ ‘Gloves and steering wheel!’ Because even The Iceman can't go anywhere without the bas.mp3"
+        ],
         videoId: "b336i2t28tE",
-        fallbackId: "dD1221g91bU",
-        start: 7,
-        fallbackStart: 10
+        start: 7
       },
       {
         id: 7,
-        driver: "Max Verstappen",
-        team: "Red Bull Racing • #1",
-        title: "Is he waking up? Or what?",
-        durationSec: 6,
-        // Verified Original Max Verstappen Cockpit Radio (Removed wrong Simply Lovely link!)
-        videoId: "e2H6e2H1N04",
-        fallbackId: "J5f8F1s5D4o",
-        start: 0,
-        fallbackStart: 0
+        driver: "Toto Wolff",
+        team: "Mercedes-AMG • Abu Dhabi 2021",
+        title: "No Michael, no! No Michael, that was so not right!",
+        durationSec: 10,
+        localCandidates: [
+          "./toto.mp3",
+          "./ReelAudio-88643.mp3",
+          "https://www.myinstants.com/media/sounds/no-mikey.mp3"
+        ],
+        videoId: "K1ca2y23ySw",
+        start: 0
       }
     ];
 
@@ -796,7 +799,6 @@
             }
           },
           onError: () => {
-            // Strictly switch to backup original broadcast video ID — NEVER use bot speech synthesis!
             if (activeYtSession === playbackSessionId && activeYtAnthem) {
               if (!usedFallbackVideo && activeYtAnthem.fallbackId) {
                 usedFallbackVideo = true;
@@ -1082,7 +1084,7 @@
       }, durationMs);
     }
 
-    // ================= ICONIC F1 RADIO MESSAGES SECTION (SYNCHRONOUS ZERO-BOT PLAYBACK) =================
+    // ================= ICONIC F1 RADIO MESSAGES SECTION =================
     function initIconicRadioSection() {
       const grid = document.getElementById("iconic-radio-grid");
       if (!grid) return;
@@ -1123,7 +1125,6 @@
       });
     }
 
-    // Synchronous execution on tap: NO slow network loops, NO bot voice fallback!
     function playIconicRadioClip(idx) {
       if (activeIconicIndex === idx) {
         stopAllAudio();
@@ -1138,50 +1139,63 @@
 
       const clip = ICONIC_RADIO_MESSAGES[idx];
       const labelText = `📻 ${clip.driver}: "${clip.title}"`;
-      const clipDurationMs = (clip.durationSec || 8) * 1000;
+      const clipDurationMs = (clip.durationSec || 10) * 1000;
 
       showFloatingAudioToast(`📻 Playing ${clip.driver} Radio...`, "LIVE", 10);
 
-      // 1. Check if we have a verified instant MP3 or pre-warmed direct stream already in memory
-      const instantUrl = clip.directMp3 || adFreeStreamCache[clip.videoId];
+      // Build candidate list: local uploaded files first -> directMp3 -> cached stream
+      const candidates = [];
+      if (Array.isArray(clip.localCandidates)) candidates.push(...clip.localCandidates);
+      if (clip.directMp3) candidates.push(clip.directMp3);
+      if (adFreeStreamCache[clip.videoId]) candidates.push(adFreeStreamCache[clip.videoId]);
 
-      if (instantUrl) {
-        const audio = new Audio(instantUrl);
-        currentRadioAudio = audio;
-        if (!clip.directMp3 && clip.start) {
-          audio.currentTime = clip.start;
-        }
-
-        let switchedToYt = false;
-        const fallbackToOriginalBroadcast = () => {
-          if (switchedToYt || mySession !== playbackSessionId) return;
-          switchedToYt = true;
-          startOriginalBroadcastYt(clip, labelText, mySession, clipDurationMs, idx);
-        };
-
-        audio.onplaying = () => {
-          if (mySession === playbackSessionId) {
-            const durMs = (audio.duration && isFinite(audio.duration) && audio.duration > 0.5 && clip.directMp3)
-              ? Math.min(12000, Math.ceil(audio.duration * 1000))
-              : clipDurationMs;
-            startClipCutoffTimer(labelText, mySession, durMs);
-          }
-        };
-
-        audio.onended = () => {
-          if (mySession === playbackSessionId) {
-            playPitwallBeep();
-            stopAllAudio();
-          }
-        };
-
-        audio.onerror = fallbackToOriginalBroadcast;
-        audio.play().catch(fallbackToOriginalBroadcast);
+      if (candidates.length > 0) {
+        tryPlayLocalOrDirectCandidates(candidates, clip, labelText, mySession, clipDurationMs, idx);
         return;
       }
 
-      // 2. Otherwise, fire the Original Broadcast Stream synchronously inside the user tap gesture!
       startOriginalBroadcastYt(clip, labelText, mySession, clipDurationMs, idx);
+    }
+
+    function tryPlayLocalOrDirectCandidates(candidates, clip, labelText, mySession, clipDurationMs, idx) {
+      if (mySession !== playbackSessionId) return;
+      if (!candidates.length) {
+        startOriginalBroadcastYt(clip, labelText, mySession, clipDurationMs, idx);
+        return;
+      }
+
+      const nextUrl = candidates.shift();
+      const audio = new Audio(nextUrl);
+      currentRadioAudio = audio;
+
+      let settled = false;
+      const tryNext = () => {
+        if (settled || mySession !== playbackSessionId) return;
+        settled = true;
+        audio.onplaying = null;
+        audio.onerror = null;
+        tryPlayLocalOrDirectCandidates(candidates, clip, labelText, mySession, clipDurationMs, idx);
+      };
+
+      audio.onplaying = () => {
+        if (settled || mySession !== playbackSessionId) return;
+        settled = true;
+        // Allow up to 25 seconds so Kimi's 16s steering wheel clip plays completely without cutting off early!
+        const actualDurationMs = (audio.duration && isFinite(audio.duration) && audio.duration > 0.5)
+          ? Math.min(25000, Math.ceil(audio.duration * 1000))
+          : clipDurationMs;
+        startClipCutoffTimer(labelText, mySession, actualDurationMs);
+      };
+
+      audio.onended = () => {
+        if (mySession === playbackSessionId) {
+          playPitwallBeep();
+          stopAllAudio();
+        }
+      };
+
+      audio.onerror = tryNext;
+      audio.play().catch(tryNext);
     }
 
     function startOriginalBroadcastYt(clip, labelText, mySession, clipDurationMs, idx) {
@@ -1211,7 +1225,7 @@
       }
     }
 
-    // ================= STANDINGS STAR ANTHEM PLAYER (SYNCHRONOUS) =================
+    // ================= STANDINGS STAR ANTHEM PLAYER =================
     function playDriverAnthem(driverId, driverName) {
       stopAllAudio();
       const mySession = playbackSessionId;
