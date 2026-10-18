@@ -113,6 +113,27 @@
     .animate-modal {
       animation: modalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+
+    /* FIA Start Light Gantry Bulbs */
+    .f1-light-bulb {
+      width: 36px;
+      height: 36px;
+      border-radius: 9999px;
+      background-color: #18181b;
+      border: 3px solid #27272a;
+      transition: background-color 0.04s ease, box-shadow 0.04s ease, border-color 0.04s ease;
+    }
+    @media (min-width: 640px) {
+      .f1-light-bulb {
+        width: 46px;
+        height: 46px;
+      }
+    }
+    .f1-light-on {
+      background-color: #ef4444 !important;
+      border-color: #fca5a5 !important;
+      box-shadow: 0 0 22px #ef4444, 0 0 40px rgba(239, 68, 68, 0.75) !important;
+    }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-24">
@@ -232,6 +253,7 @@
       <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn flex-1 sm:flex-none">🧮 Points Simulator</button>
       <button onclick="switchTab('radio')" id="tab-radio" class="tab-btn flex-1 sm:flex-none">📻 Radio & Control</button>
       <button onclick="switchTab('standings')" id="tab-standings" class="tab-btn flex-1 sm:flex-none">🏆 Standings</button>
+      <button onclick="switchTab('game')" id="tab-game" class="tab-btn flex-1 sm:flex-none">🚦 Lights Out Game</button>
     </div>
 
     <!-- ================= TAB 1: SCHEDULE + WEATHER ================= -->
@@ -431,7 +453,144 @@
       </div>
     </section>
 
+    <!-- ================= TAB 6: LIGHTS OUT REACTION TIME MINI-GAME ================= -->
+    <section id="view-game" class="hidden space-y-6">
+      <div class="theme-card border border-zinc-800 rounded-2xl p-4 sm:p-6 max-w-3xl mx-auto space-y-6 shadow-2xl">
+        
+        <!-- Header & Personal Best Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+          <div>
+            <h3 class="font-display font-black text-lg sm:text-xl tracking-wide">🚦 FIA LIGHTS OUT REFLEX TEST</h3>
+            <p class="text-xs text-zinc-400">Wait for all 5 red lights to illuminate, then tap the instant they go out!</p>
+          </div>
+          <div class="flex items-center gap-2 bg-zinc-950 px-3 py-2 rounded-xl border border-zinc-800">
+            <div>
+              <span class="text-[10px] text-zinc-500 block font-bold uppercase">PERSONAL BEST</span>
+              <span id="game-best-score" class="font-display font-black text-sm sm:text-base theme-sec-text">--.---s</span>
+            </div>
+            <button onclick="resetReactionBest()" title="Reset High Score" class="text-[10px] bg-zinc-900 hover:bg-zinc-800 text-zinc-400 px-2 py-1 rounded border border-zinc-800 ml-1">
+              ↺ Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive FIA 5-Light Gantry Tap Zone -->
+        <div id="lights-tap-zone" onpointerdown="handleReactionZoneTap(event)" class="select-none cursor-pointer rounded-2xl bg-zinc-950 border-2 border-zinc-800 hover:border-zinc-700 p-5 sm:p-8 flex flex-col items-center justify-center space-y-6 transition-all shadow-inner min-h-[290px]">
+          
+          <!-- 5-Column FIA Start Light Rig -->
+          <div class="bg-zinc-900/95 border-2 border-zinc-800 rounded-2xl px-4 py-4 sm:px-7 sm:py-5 shadow-2xl flex items-center justify-center gap-3 sm:gap-5">
+            <!-- Column 1 -->
+            <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
+              <div class="f1-light-bulb" id="gantry-1a"></div>
+              <div class="f1-light-bulb" id="gantry-1b"></div>
+            </div>
+            <!-- Column 2 -->
+            <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
+              <div class="f1-light-bulb" id="gantry-2a"></div>
+              <div class="f1-light-bulb" id="gantry-2b"></div>
+            </div>
+            <!-- Column 3 -->
+            <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
+              <div class="f1-light-bulb" id="gantry-3a"></div>
+              <div class="f1-light-bulb" id="gantry-3b"></div>
+            </div>
+            <!-- Column 4 -->
+            <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
+              <div class="f1-light-bulb" id="gantry-4a"></div>
+              <div class="f1-light-bulb" id="gantry-4b"></div>
+            </div>
+            <!-- Column 5 -->
+            <div class="flex flex-col gap-2.5 bg-black/80 p-2 rounded-xl border border-zinc-800">
+              <div class="f1-light-bulb" id="gantry-5a"></div>
+              <div class="f1-light-bulb" id="gantry-5b"></div>
+            </div>
+          </div>
+
+          <!-- Big Live Reaction Readout -->
+          <div class="text-center space-y-1.5">
+            <div id="game-time-display" class="font-display font-black text-3xl sm:text-5xl tracking-wider text-white">
+              TAP TO START
+            </div>
+            <p id="game-status-subtitle" class="text-xs sm:text-sm font-semibold text-zinc-400">
+              Tap anywhere inside this box to arm the FIA start sequence
+            </p>
+            <div id="game-driver-rank" class="inline-block text-xs font-display font-bold px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 theme-sec-text mt-2">
+              🏎️ F1 Reflex Benchmark: 0.200s
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Action & WhatsApp Challenge Bar -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div class="text-xs text-zinc-400">
+            💡 <span class="font-semibold text-zinc-200">Pro Tip:</span> Beat your previous personal best to trigger the <span class="theme-sec-text font-bold">New Record Telemetry Popup!</span>
+          </div>
+          <button onclick="shareReactionOnWhatsApp()" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs px-4 py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 shrink-0">
+            📲 Share Score on WhatsApp
+          </button>
+        </div>
+
+      </div>
+    </section>
+
   </main>
+
+  <!-- ================= NEW PERSONAL RECORD POPUP MODAL ================= -->
+  <div id="record-modal" onclick="if(event.target === this) closeRecordModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
+    <div class="animate-modal relative w-full max-w-md rounded-2xl bg-zinc-950/95 backdrop-blur-xl border-2 border-amber-400/80 shadow-[0_0_40px_rgba(250,204,21,0.25)] overflow-hidden text-white p-5 sm:p-6 space-y-5">
+      
+      <!-- Top Right Cross (✕) Close Button -->
+      <button onclick="closeRecordModal()" class="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-zinc-800/90 hover:bg-red-600 text-zinc-300 hover:text-white flex items-center justify-center font-bold text-sm transition" title="Close Popup">
+        ✕
+      </button>
+
+      <!-- Trophy & Header -->
+      <div class="text-center space-y-1.5 pt-1">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 text-[11px] font-display font-bold uppercase tracking-widest">
+          🏆 NEW PERSONAL RECORD!
+        </div>
+        <h3 class="font-display font-black text-2xl sm:text-3xl text-white tracking-wide pt-1">
+          PURPLE SECTOR REFLEX!
+        </h3>
+        <p id="record-modal-improvement" class="text-xs text-emerald-400 font-bold">
+          You beat your previous high score!
+        </p>
+      </div>
+
+      <!-- Reaction Time Telemetry Breakdown Box -->
+      <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 text-center space-y-3">
+        <div>
+          <span class="text-[10px] uppercase tracking-widest text-zinc-400 block">NEW HIGH SCORE REACTION TIME</span>
+          <span id="record-modal-time" class="font-display font-black text-4xl sm:text-5xl text-amber-400 tracking-tight block mt-1">
+            0.198s
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800 text-xs">
+          <div class="bg-zinc-950 p-2 rounded-lg border border-zinc-800/80">
+            <span class="text-[10px] text-zinc-500 block">PREVIOUS BEST</span>
+            <span id="record-modal-prev" class="font-display font-bold text-zinc-300">First Record!</span>
+          </div>
+          <div class="bg-zinc-950 p-2 rounded-lg border border-zinc-800/80">
+            <span class="text-[10px] text-zinc-500 block">DRIVER TIER</span>
+            <span id="record-modal-tier" class="font-display font-bold text-emerald-400 truncate block">F1 Pro Starter</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Share on WhatsApp & Continue Buttons -->
+      <div class="space-y-2.5">
+        <button onclick="shareReactionOnWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs sm:text-sm py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+          📲 Share New Record on WhatsApp
+        </button>
+        <button onclick="closeRecordModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-display font-bold text-xs py-2.5 rounded-xl transition">
+          Continue Racing
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ================= TRANSLUCENT CIRCUIT TELEMETRY POPUP MODAL ================= -->
   <div id="track-modal" onclick="if(event.target === this) closeTrackModal()" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
@@ -656,6 +815,13 @@
     let raceControlMessages = [];
     let deferredInstallPrompt = null;
 
+    // ================= LIGHTS OUT MINI-GAME STATE =================
+    let gameState = "idle"; // "idle" | "sequence" | "waiting" | "green"
+    let gameTimers = [];
+    let lightsOutTimestamp = 0;
+    let lastReactionSec = null;
+    let lastReactionTier = "";
+
     // ================= ALL 20+ DRIVER ANTHEMS =================
     const DRIVER_ANTHEMS_MAP = {
       "antonelli": { key: "antonelli", videoId: "DPAJ7VLMWSI", start: 16, hook: "Kimi, Kimi Antonelli!" },
@@ -848,6 +1014,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       initTheme();
       loadPinnedDriver();
+      loadSavedReactionBest();
       fetchSeasonData();
       fetchStandingsAndH2H();
       fetchRaceControl();
@@ -883,7 +1050,10 @@
       document.getElementById("whatsapp-share").addEventListener("click", copyScheduleForWhatsApp);
 
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeTrackModal();
+        if (e.key === "Escape") {
+          closeTrackModal();
+          closeRecordModal();
+        }
       });
 
       setInterval(() => {
@@ -903,6 +1073,212 @@
         document.body.setAttribute("data-theme", e.target.value);
         localStorage.setItem("f1_theme", e.target.value);
       });
+    }
+
+    // ================= LIGHTS OUT REACTION MINI-GAME LOGIC =================
+    function loadSavedReactionBest() {
+      const bestMs = localStorage.getItem("f1_best_reaction_ms");
+      const el = document.getElementById("game-best-score");
+      if (bestMs && el) {
+        el.textContent = `${(parseFloat(bestMs) / 1000).toFixed(3)}s`;
+      }
+    }
+
+    function resetReactionBest() {
+      localStorage.removeItem("f1_best_reaction_ms");
+      const el = document.getElementById("game-best-score");
+      if (el) el.textContent = "--.---s";
+    }
+
+    function clearGameTimers() {
+      gameTimers.forEach(t => clearTimeout(t));
+      gameTimers = [];
+    }
+
+    function setGantryColumnLight(colIdx, isOn) {
+      const a = document.getElementById(`gantry-${colIdx}a`);
+      const b = document.getElementById(`gantry-${colIdx}b`);
+      if (a) a.classList.toggle("f1-light-on", isOn);
+      if (b) b.classList.toggle("f1-light-on", isOn);
+    }
+
+    function resetAllGantryLights() {
+      for (let i = 1; i <= 5; i++) {
+        setGantryColumnLight(i, false);
+      }
+    }
+
+    function playStartGantryTone(freq = 880, durationSec = 0.11) {
+      try {
+        if (!sharedAudioCtx) {
+          sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume();
+
+        const osc = sharedAudioCtx.createOscillator();
+        const gain = sharedAudioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, sharedAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.11, sharedAudioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(sharedAudioCtx.destination);
+        osc.start();
+        osc.stop(sharedAudioCtx.currentTime + durationSec);
+      } catch (e) {}
+    }
+
+    function getDriverTierForReaction(sec) {
+      if (sec < 0.165) return "⚡ Alien Telemetry (Bottas Austria 2017 Level!)";
+      if (sec <= 0.210) return "🦁 Max Verstappen / World Champion Reflex!";
+      if (sec <= 0.260) return "🏎️ Pro Formula 1 Grid Starter!";
+      if (sec <= 0.330) return "🏁 F2 Midfield Starter";
+      if (sec <= 0.450) return "🛞 Slow Clutch Release (Anti-Stall Risk)";
+      return "🐢 Pitlane Start — Did you fall asleep on the grid?!";
+    }
+
+    function handleReactionZoneTap(e) {
+      if (e) e.preventDefault();
+
+      const timeDisplay = document.getElementById("game-time-display");
+      const subDisplay = document.getElementById("game-status-subtitle");
+      const rankDisplay = document.getElementById("game-driver-rank");
+      const zone = document.getElementById("lights-tap-zone");
+
+      // STATE 1: Idle -> Start the 5-light sequence
+      if (gameState === "idle") {
+        gameState = "sequence";
+        clearGameTimers();
+        resetAllGantryLights();
+        zone.classList.remove("border-red-600", "border-emerald-500");
+        zone.classList.add("border-amber-400/60");
+
+        timeDisplay.textContent = "HOLD CLUTCH...";
+        timeDisplay.className = "font-display font-black text-3xl sm:text-5xl tracking-wider text-amber-400";
+        subDisplay.textContent = "Wait for all 5 red lights to go OUT before tapping!";
+        rankDisplay.textContent = "🚥 FIA Start Sequence Armed...";
+
+        for (let col = 1; col <= 5; col++) {
+          const t = setTimeout(() => {
+            setGantryColumnLight(col, true);
+            playStartGantryTone(780, 0.12);
+
+            // Once 5th light is on, hold for random 0.45s - 3.1s before Lights Out
+            if (col === 5) {
+              gameState = "waiting";
+              const randomDelay = Math.floor(450 + Math.random() * 2650);
+              const outTimer = setTimeout(() => {
+                resetAllGantryLights();
+                lightsOutTimestamp = performance.now();
+                gameState = "green";
+                playStartGantryTone(1560, 0.18);
+                timeDisplay.textContent = "GO! GO! GO!";
+                timeDisplay.className = "font-display font-black text-3xl sm:text-5xl tracking-wider text-emerald-400";
+                subDisplay.textContent = "TAP NOW!";
+              }, randomDelay);
+              gameTimers.push(outTimer);
+            }
+          }, col * 750);
+          gameTimers.push(t);
+        }
+        return;
+      }
+
+      // STATE 2: Tapped too early while red lights are still on -> JUMP START!
+      if (gameState === "sequence" || gameState === "waiting") {
+        clearGameTimers();
+        resetAllGantryLights();
+        gameState = "idle";
+        playStartGantryTone(240, 0.35);
+
+        zone.classList.remove("border-amber-400/60", "border-emerald-500");
+        zone.classList.add("border-red-600");
+
+        timeDisplay.textContent = "JUMP START!";
+        timeDisplay.className = "font-display font-black text-3xl sm:text-5xl tracking-wider text-red-500";
+        subDisplay.textContent = "⚠️ FIA Steward Penalty: 10-Second Stop & Go! Tap to try again.";
+        rankDisplay.textContent = "🚩 False Start Detected Before Lights Out";
+        return;
+      }
+
+      // STATE 3: Valid reaction after Lights Out!
+      if (gameState === "green") {
+        const reactionMs = Math.max(1, Math.round(performance.now() - lightsOutTimestamp));
+        const reactionSec = reactionMs / 1000;
+        const formattedSec = `${reactionSec.toFixed(3)}s`;
+        const tier = getDriverTierForReaction(reactionSec);
+
+        gameState = "idle";
+        lastReactionSec = formattedSec;
+        lastReactionTier = tier;
+
+        zone.classList.remove("border-amber-400/60", "border-red-600");
+        zone.classList.add("border-emerald-500");
+
+        timeDisplay.textContent = formattedSec;
+        timeDisplay.className = "font-display font-black text-4xl sm:text-6xl tracking-wider text-emerald-400";
+        subDisplay.textContent = "Tap anywhere in the box to test your reflexes again";
+        rankDisplay.textContent = tier;
+
+        // Check if this is a New Personal Record!
+        const prevBestRaw = localStorage.getItem("f1_best_reaction_ms");
+        const prevBestMs = prevBestRaw ? parseFloat(prevBestRaw) : null;
+
+        if (prevBestMs === null || reactionMs < prevBestMs) {
+          localStorage.setItem("f1_best_reaction_ms", String(reactionMs));
+          loadSavedReactionBest();
+          openRecordModal(formattedSec, prevBestMs, reactionMs, tier);
+        }
+      }
+    }
+
+    function openRecordModal(newSecStr, prevBestMs, newMs, tierText) {
+      document.getElementById("record-modal-time").textContent = newSecStr;
+      document.getElementById("record-modal-tier").textContent = tierText.replace(/^[^\w]+/, "");
+
+      const prevEl = document.getElementById("record-modal-prev");
+      const impEl = document.getElementById("record-modal-improvement");
+
+      if (prevBestMs === null) {
+        prevEl.textContent = "First Benchmark!";
+        impEl.textContent = "🔥 First official FIA reflex record logged! Try again to beat it!";
+      } else {
+        const prevSecStr = `${(prevBestMs / 1000).toFixed(3)}s`;
+        const shavedSec = ((prevBestMs - newMs) / 1000).toFixed(3);
+        prevEl.textContent = prevSecStr;
+        impEl.textContent = `🚀 NEW RECORD MADE! You shaved -${shavedSec}s off your previous ${prevSecStr} best!`;
+      }
+
+      const modal = document.getElementById("record-modal");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+
+    function closeRecordModal() {
+      const modal = document.getElementById("record-modal");
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+
+    function shareReactionOnWhatsApp() {
+      const bestMs = localStorage.getItem("f1_best_reaction_ms");
+      const bestSecStr = bestMs ? `${(parseFloat(bestMs) / 1000).toFixed(3)}s` : null;
+      const scoreToShare = lastReactionSec || bestSecStr || "0.200s";
+      const tierToShare = lastReactionTier || (bestMs ? getDriverTierForReaction(parseFloat(bestMs) / 1000) : "🏎️ Pro F1 Grid Starter!");
+      const siteUrl = window.location.href.split("#")[0];
+
+      const shareText =
+        `🚦 *F1 LIGHTS OUT REFLEX CHALLENGE!* 🏎️💨\n\n` +
+        `⏱️ My Reaction Time: *${scoreToShare}*\n` +
+        `🏆 Personal Best: *${bestSecStr || scoreToShare}*\n` +
+        `📊 Driver Rank: *${tierToShare}*\n\n` +
+        `Can you beat my F1 start reaction time? Test your reflexes here:\n👉 ${siteUrl}`;
+
+      try {
+        navigator.clipboard.writeText(shareText);
+      } catch (e) {}
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      window.open(waUrl, "_blank");
     }
 
     // ================= CIRCUIT TELEMETRY LOOKUP & MODAL LOGIC =================
@@ -1143,7 +1519,6 @@
 
       showFloatingAudioToast(`📻 Playing ${clip.driver} Radio...`, "LIVE", 10);
 
-      // Build candidate list: local uploaded files first -> directMp3 -> cached stream
       const candidates = [];
       if (Array.isArray(clip.localCandidates)) candidates.push(...clip.localCandidates);
       if (clip.directMp3) candidates.push(clip.directMp3);
@@ -1180,7 +1555,6 @@
       audio.onplaying = () => {
         if (settled || mySession !== playbackSessionId) return;
         settled = true;
-        // Allow up to 25 seconds so Kimi's 16s steering wheel clip plays completely without cutting off early!
         const actualDurationMs = (audio.duration && isFinite(audio.duration) && audio.duration > 0.5)
           ? Math.min(25000, Math.ceil(audio.duration * 1000))
           : clipDurationMs;
@@ -1855,7 +2229,7 @@
     }
 
     function switchTab(tab) {
-      ["schedule", "h2h", "simulator", "radio", "standings"].forEach(t => {
+      ["schedule", "h2h", "simulator", "radio", "standings", "game"].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle("hidden", t !== tab);
         document.getElementById(`tab-${t}`).classList.toggle("active-tab", t === tab);
       });
