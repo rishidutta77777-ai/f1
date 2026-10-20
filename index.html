@@ -135,7 +135,7 @@
       box-shadow: 0 0 22px #ef4444, 0 0 40px rgba(239, 68, 68, 0.75) !important;
     }
 
-    /* Live Overtake Row Highlights & Carbon Steering Wheel */
+    /* Live Overtake Row Highlights, Fastest Lap, & Carbon Steering Wheel */
     .overtake-up-glow {
       border-color: rgba(16, 185, 129, 0.85) !important;
       background: linear-gradient(90deg, rgba(16, 185, 129, 0.18) 0%, rgba(9, 9, 11, 0.95) 100%) !important;
@@ -144,6 +144,9 @@
     .overtake-down-glow {
       border-color: rgba(239, 68, 68, 0.85) !important;
       background: linear-gradient(90deg, rgba(239, 68, 68, 0.18) 0%, rgba(9, 9, 11, 0.95) 100%) !important;
+    }
+    .fastest-lap-glow {
+      border-left: 4px solid #a855f7 !important;
     }
     .selected-driver-row {
       border-color: var(--accent-sec) !important;
@@ -163,6 +166,15 @@
     .rpm-led-green { background-color: #22c55e !important; box-shadow: 0 0 8px #22c55e; }
     .rpm-led-red { background-color: #ef4444 !important; box-shadow: 0 0 8px #ef4444; }
     .rpm-led-blue { background-color: #3b82f6 !important; box-shadow: 0 0 10px #3b82f6; }
+
+    /* Safety Car / VSC Flashing Hazard Striping */
+    @keyframes scFlash {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+    .sc-banner-pulse {
+      animation: scFlash 1.1s infinite ease-in-out;
+    }
   </style>
 </head>
 <body data-theme="rbr" class="bg-zinc-950 text-zinc-100 min-h-screen font-sans pb-24">
@@ -359,34 +371,34 @@
       </div>
     </section>
 
-    <!-- ================= TAB 2: LIVE CAR TELEMETRY & FIA TIMING TOWER ================= -->
+    <!-- ================= TAB 2: REDESIGNED FIA LIVE TELEMETRY & MULTI-SESSION TIMING HUB ================= -->
     <section id="view-telemetry" class="hidden space-y-5">
 
-      <!-- Mode Switcher Bar (Auto Live Detection + Test Modes so you can preview Live Overtakes & Post-Race anytime!) -->
+      <!-- Top Mode Switcher Bar -->
       <div class="theme-card border border-zinc-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
         <div class="flex items-center gap-2">
-          <span id="telem-state-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-          <span id="telem-state-badge" class="font-display font-bold text-xs sm:text-sm text-white">FIA TELEMETRYTRANSPONDER</span>
+          <span id="telem-state-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span id="telem-state-badge" class="font-display font-bold text-xs sm:text-sm text-white">FIA LIVE TIMING & TELEMETRY TRANSPONDER</span>
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
-          <button onclick="setTelemetryMode('auto')" id="tmode-auto" class="px-2.5 py-1 rounded-lg font-bold bg-red-600 text-white transition">
-            🔄 Auto Live
+          <button onclick="setTelemetryMode('auto')" id="tmode-auto" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 transition">
+            🔄 Auto Detect
           </button>
           <button onclick="setTelemetryMode('standby')" id="tmode-standby" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-zinc-300 border border-zinc-700 hover:bg-zinc-800 transition">
             ⏳ Standby View
           </button>
-          <button onclick="setTelemetryMode('live')" id="tmode-live" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-emerald-400 border border-zinc-700 hover:bg-zinc-800 transition">
-            🟢 Live Race + Overtakes
+          <button onclick="setTelemetryMode('live')" id="tmode-live" class="px-2.5 py-1 rounded-lg font-bold bg-red-600 text-white transition">
+            🟢 Live Session Demo
           </button>
           <button onclick="setTelemetryMode('post')" id="tmode-post" class="px-2.5 py-1 rounded-lg font-bold bg-zinc-900 text-amber-400 border border-zinc-700 hover:bg-zinc-800 transition">
-            🏁 Post-Race Top 10
+            🏁 Race End: P1-P3 & Top 10
           </button>
         </div>
       </div>
 
       <!-- STATE A: BEFORE RACE STANDBY SCREEN -->
-      <div id="telem-standby-panel" class="theme-card border border-zinc-800 rounded-2xl p-6 sm:p-10 text-center space-y-5 max-w-2xl mx-auto shadow-2xl">
+      <div id="telem-standby-panel" class="hidden theme-card border border-zinc-800 rounded-2xl p-6 sm:p-10 text-center space-y-5 max-w-2xl mx-auto shadow-2xl">
         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-display font-bold">
           📡 PITWALL TRANSPONDER STANDBY
         </div>
@@ -412,52 +424,145 @@
 
         <div class="pt-2">
           <button onclick="setTelemetryMode('live')" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs px-5 py-3 rounded-xl shadow-lg transition">
-            🏎️ Launch Live Race & Steering Wheel Simulator Now →
+            🏎️ Open Live Session Demo (FP / Quali / Sprint / Race) →
           </button>
         </div>
       </div>
 
-      <!-- STATE B: LIVE RACE FIA TIMING TOWER + F1 STEERING WHEEL TELEMETRY -->
-      <div id="telem-live-panel" class="hidden space-y-5">
-        <!-- FIA Top Lap & Track Status Banner -->
-        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-display font-black text-xs px-3 py-1 rounded-lg">
-              🟢 TRACK CLEAR • DRS ENABLED
+      <!-- STATE B: LIVE FIA MULTI-SESSION TIMING TOWER + SAFETY CAR / VSC + STEERING WHEEL -->
+      <div id="telem-live-panel" class="space-y-4">
+
+        <!-- 1. FIA SESSION TYPE SELECTOR TABS (Free Practice, Qualifying, Sprint, Race Day) -->
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-[11px] font-display font-bold uppercase tracking-wider text-zinc-400">
+              📺 SELECT FIA BROADCAST SESSION FORMAT:
             </span>
-            <span id="fia-lap-counter" class="font-display font-black text-sm sm:text-base text-white tracking-wider">
-              LAP 42 / 56
+            <span id="fia-session-subtitle" class="text-[11px] font-mono text-amber-400 font-bold">
+              Grand Prix Race Day • 20 Cars • Pit Stops & Fastest Lap
             </span>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-[11px] text-zinc-400 hidden sm:inline">Tap any driver row to inspect Steering Wheel</span>
-            <button onclick="triggerSimulatedOvertake()" class="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-400 font-display font-bold text-[11px] px-3 py-1.5 rounded-lg border border-zinc-700 transition">
-              ⚡ Force Overtake Now
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="setFiaSessionType('fp')" id="fia-tab-fp" class="py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition flex flex-col items-center gap-0.5">
+              <span>⏱️ FREE PRACTICE</span>
+              <span class="text-[9px] font-sans font-normal text-zinc-400">FP1/FP2/FP3 • Lap Times & Sectors</span>
             </button>
+            <button onclick="setFiaSessionType('quali')" id="fia-tab-quali" class="py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition flex flex-col items-center gap-0.5">
+              <span>🟣 QUALIFYING</span>
+              <span class="text-[9px] font-sans font-normal text-zinc-400">Q1/Q2/Q3 • Knockout Zone & Flying Laps</span>
+            </button>
+            <button onclick="setFiaSessionType('sprint')" id="fia-tab-sprint" class="py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition flex flex-col items-center gap-0.5">
+              <span>⚡ SPRINT RACE</span>
+              <span class="text-[9px] font-sans font-normal text-zinc-400">100km Dash • Top 8 Score Points</span>
+            </button>
+            <button onclick="setFiaSessionType('race')" id="fia-tab-race" class="py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-red-500 bg-red-600 text-white shadow-lg transition flex flex-col items-center gap-0.5">
+              <span>🏁 RACE DAY (GP)</span>
+              <span class="text-[9px] font-sans font-normal text-red-100">Intervals • Pit [P] • Fastest Lap</span>
+            </button>
+          </div>
+
+          <!-- Sub-session pills for FP (FP1/FP2/FP3) or Quali (Q1/Q2/Q3) -->
+          <div id="fia-subsession-bar" class="hidden pt-2 border-t border-zinc-900 flex items-center justify-between flex-wrap gap-2">
+            <div id="fia-subsession-pills" class="flex items-center gap-1.5"></div>
+            <span id="fia-knockout-note" class="text-[11px] font-mono text-red-400 font-bold"></span>
           </div>
         </div>
 
-        <div class="grid lg:grid-cols-12 gap-6 items-start">
-          <!-- Left 6 Cols: Animated FIA Live Timing Tower -->
-          <div class="lg:col-span-6 theme-card border border-zinc-800 rounded-xl p-4 space-y-3">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-2.5">
+        <!-- 2. FIA RACE CONTROL TRACK STATUS & SAFETY CAR / VSC DEPLOYMENT BAR -->
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 space-y-3">
+          <!-- Dynamic Glowing Banner (Green Flag / Safety Car / VSC / Red Flag) -->
+          <div id="fia-track-banner" class="rounded-xl p-3 border border-emerald-500/50 bg-emerald-500/15 flex flex-wrap items-center justify-between gap-2 transition-all">
+            <div class="flex items-center gap-2.5">
+              <span id="fia-flag-icon" class="text-lg">🟢</span>
               <div>
-                <h4 class="font-display font-bold text-sm sm:text-base text-white">🗼 FIA Live Timing Tower</h4>
-                <p class="text-[11px] text-zinc-400">Watch green ▲ / red ▼ sliding overtakes • Tap a driver for cockpit wheel</p>
+                <span id="fia-flag-title" class="font-display font-black text-xs sm:text-sm text-emerald-400 tracking-wider block">
+                  TRACK CLEAR • GREEN FLAG • DRS ENABLED
+                </span>
+                <span id="fia-flag-desc" class="text-[11px] text-zinc-300 block">
+                  Normal racing conditions — Overtaking & DRS active in Zones 1 & 2
+                </span>
               </div>
-              <span class="text-[10px] font-mono text-zinc-500">INTERVAL</span>
             </div>
-
-            <div id="fia-timing-tower" class="space-y-2 relative"></div>
+            <div class="text-right font-display">
+              <span id="fia-lap-counter" class="font-black text-sm sm:text-base text-white tracking-wider block">
+                LAP 42 / 56
+              </span>
+              <span id="fia-fastest-lap-banner" class="text-[10px] font-mono text-purple-300 bg-purple-950/70 border border-purple-500/40 px-2 py-0.5 rounded inline-block mt-0.5">
+                ⏱️ FL: VER (1:34.812)
+              </span>
+            </div>
           </div>
 
-          <!-- Right 6 Cols: Visual F1 Steering Wheel Telemetry Display -->
-          <div class="lg:col-span-6 theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 sticky top-20">
+          <!-- Interactive Demo Controls: Deploy Safety Car, VSC, Red Flag, Overtake, Pit Stop -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[10px] font-display font-bold text-zinc-500 uppercase mr-1">DEPLOY FLAG:</span>
+              <button onclick="setFiaTrackStatus('green')" id="flag-btn-green" class="px-2.5 py-1.5 rounded-lg font-display font-bold text-[10px] bg-emerald-600 text-white shadow transition">
+                🟢 Green Flag
+              </button>
+              <button onclick="setFiaTrackStatus('sc')" id="flag-btn-sc" class="px-2.5 py-1.5 rounded-lg font-display font-bold text-[10px] bg-zinc-900 hover:bg-amber-500/20 text-amber-400 border border-amber-500/40 transition">
+                🟡 Deploy Safety Car (SC)
+              </button>
+              <button onclick="setFiaTrackStatus('vsc')" id="flag-btn-vsc" class="px-2.5 py-1.5 rounded-lg font-display font-bold text-[10px] bg-zinc-900 hover:bg-orange-500/20 text-orange-400 border border-orange-500/40 transition">
+                🟠 Deploy VSC
+              </button>
+              <button onclick="setFiaTrackStatus('red')" id="flag-btn-red" class="px-2.5 py-1.5 rounded-lg font-display font-bold text-[10px] bg-zinc-900 hover:bg-red-500/20 text-red-400 border border-red-500/40 transition">
+                🔴 Red Flag
+              </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button onclick="triggerSimulatedOvertake()" class="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-emerald-400 font-display font-bold text-[10px] px-2.5 py-1.5 rounded-lg border border-zinc-700 transition">
+                ⚡ Force Overtake
+              </button>
+              <button onclick="triggerRandomPitStop()" class="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-amber-300 font-display font-bold text-[10px] px-2.5 py-1.5 rounded-lg border border-zinc-700 transition">
+                🔧 Box Random Car [P]
+              </button>
+              <button onclick="triggerNewFastestLap()" class="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-purple-300 font-display font-bold text-[10px] px-2.5 py-1.5 rounded-lg border border-purple-500/40 transition">
+                🟣 Set Fastest Lap
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. MAIN 20-DRIVER TIMING TOWER + COCKPIT STEERING WHEEL -->
+        <div class="grid lg:grid-cols-12 gap-6 items-start">
+          <!-- Left 7 Cols: Full 20-Car FIA Timing Tower -->
+          <div class="lg:col-span-7 theme-card border border-zinc-800 rounded-xl p-3.5 sm:p-4 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-zinc-800 pb-2.5">
+              <div>
+                <h4 id="tower-header-title" class="font-display font-bold text-sm sm:text-base text-white">
+                  🗼 FIA 20-Driver Race Timing Tower
+                </h4>
+                <p class="text-[11px] text-zinc-400">
+                  Tap any of the 20 drivers to inspect live cockpit steering wheel • <span class="text-purple-400 font-semibold">🟣 = Fastest Lap</span> • <span class="text-amber-400 font-semibold">[P] = In Pit Lane</span>
+                </p>
+              </div>
+              <span id="tower-col-header" class="text-[10px] font-mono text-zinc-400 font-bold uppercase">
+                TYRE • PIT • GAP
+              </span>
+            </div>
+
+            <!-- Legend for Sector Micro-Blocks (Shown in FP / Quali) -->
+            <div id="sector-legend-bar" class="hidden flex items-center gap-3 text-[10px] font-mono bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400 font-bold">SECTORS (S1•S2•S3):</span>
+              <span class="flex items-center gap-1 text-purple-400"><span class="w-2.5 h-2.5 rounded-sm bg-purple-500 inline-block"></span> Overall Best</span>
+              <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span> Personal Best</span>
+              <span class="flex items-center gap-1 text-amber-400"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block"></span> Yellow</span>
+            </div>
+
+            <!-- All 20 Drivers Container -->
+            <div id="fia-timing-tower" class="space-y-1.5 max-h-[680px] overflow-y-auto pr-1 relative"></div>
+          </div>
+
+          <!-- Right 5 Cols: Visual F1 Steering Wheel Telemetry Display -->
+          <div class="lg:col-span-5 theme-card border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4 lg:sticky lg:top-20">
             <div class="flex flex-wrap justify-between items-center gap-2 border-b border-zinc-800 pb-3">
               <div>
                 <span class="text-[10px] font-bold uppercase tracking-widest theme-sec-text block">COCKPIT STEERING WHEEL TELEMETRY</span>
                 <h4 id="wheel-driver-name" class="font-display font-black text-base sm:text-lg text-white">
-                  #16 Charles Leclerc (Ferrari)
+                  #1 Max Verstappen (Red Bull Racing)
                 </h4>
               </div>
               <span id="wheel-drs-badge" class="font-display font-black text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
@@ -466,7 +571,7 @@
             </div>
 
             <!-- Carbon-Fiber F1 Steering Wheel Rim -->
-            <div class="carbon-wheel rounded-3xl border-4 border-zinc-700/90 p-4 sm:p-6 space-y-5 relative">
+            <div class="carbon-wheel rounded-3xl border-4 border-zinc-700/90 p-4 sm:p-5 space-y-4 relative">
 
               <!-- 15-LED Shift Light Array across top of wheel -->
               <div id="wheel-rpm-leds" class="flex items-center gap-1 bg-black/90 p-2 rounded-xl border border-zinc-800">
@@ -476,25 +581,38 @@
               </div>
 
               <!-- Center Multi-Function OLED Dash Screen -->
-              <div class="bg-zinc-950 border-2 border-zinc-800 rounded-2xl p-4 grid grid-cols-3 items-center text-center gap-2 shadow-inner">
-                <!-- Speed -->
+              <div class="bg-zinc-950 border-2 border-zinc-800 rounded-2xl p-3.5 grid grid-cols-3 items-center text-center gap-2 shadow-inner">
                 <div>
                   <span class="text-[10px] font-bold text-zinc-500 block">SPEED</span>
                   <span id="wheel-speed" class="font-display font-black text-2xl sm:text-3xl text-white">314</span>
                   <span class="text-[10px] font-mono text-zinc-400 block">KM/H</span>
                 </div>
 
-                <!-- Center Giant Gear Indicator -->
                 <div class="border-x border-zinc-800/90 px-2">
                   <span class="text-[10px] font-bold text-zinc-500 block">GEAR</span>
-                  <span id="wheel-gear" class="font-display font-black text-4xl sm:text-6xl theme-sec-text leading-none">8</span>
+                  <span id="wheel-gear" class="font-display font-black text-4xl sm:text-5xl theme-sec-text leading-none">8</span>
                 </div>
 
-                <!-- RPM -->
                 <div>
                   <span class="text-[10px] font-bold text-zinc-500 block">ENGINE RPM</span>
-                  <span id="wheel-rpm" class="font-display font-black text-lg sm:text-2xl text-red-400">11,840</span>
+                  <span id="wheel-rpm" class="font-display font-black text-lg sm:text-xl text-red-400">11,840</span>
                   <span class="text-[10px] font-mono text-zinc-400 block">REV/MIN</span>
+                </div>
+              </div>
+
+              <!-- Selected Driver Live Tyre, Best Lap & Pit Status Strip -->
+              <div class="grid grid-cols-3 gap-2 text-center bg-zinc-950/90 p-2.5 rounded-xl border border-zinc-800 text-xs">
+                <div>
+                  <span class="text-[9px] text-zinc-500 block uppercase">CURRENT TYRE</span>
+                  <span id="wheel-tyre-info" class="font-display font-bold text-amber-400">MEDIUM (14L)</span>
+                </div>
+                <div>
+                  <span class="text-[9px] text-zinc-500 block uppercase">BEST LAP</span>
+                  <span id="wheel-best-lap" class="font-mono font-bold text-purple-300">1:34.812</span>
+                </div>
+                <div>
+                  <span class="text-[9px] text-zinc-500 block uppercase">TRACK STATUS</span>
+                  <span id="wheel-pit-status" class="font-display font-bold text-emerald-400">ON TRACK</span>
                 </div>
               </div>
 
@@ -523,7 +641,7 @@
 
               <!-- Rotary Knobs Decoration -->
               <div class="flex justify-between items-center text-[10px] font-display font-bold text-zinc-500 pt-1">
-                <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">ERS: OVERTAKE</span>
+                <span id="wheel-ers-mode" class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800 text-emerald-400">ERS: OVERTAKE</span>
                 <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">BBAL: 56.5%</span>
                 <span class="bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">DIFF: MID 4</span>
               </div>
@@ -533,26 +651,27 @@
         </div>
       </div>
 
-      <!-- STATE C: POST-SESSION WINNERS PODIUM + TOP 10 CLASSIFICATION -->
+      <!-- STATE C: POST-RACE P1, P2, P3 PODIUM HIGHLIGHT + TOP 10 POINTS SCORERS -->
       <div id="telem-post-panel" class="hidden space-y-6">
         <div class="theme-card border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-6">
           <div class="text-center space-y-1">
             <span class="text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">
-              🏁 CHECKERED FLAG — SESSION FINISHED
+              🏁 CHECKERED FLAG — OFFICIAL RACE CLASSIFICATION
             </span>
             <h3 id="post-race-title" class="font-display font-black text-xl sm:text-3xl text-white pt-1">
-              GRAND PRIX PODIUM WINNERS
+              P1 • P2 • P3 PODIUM & TOP 10 POINTS FINISHERS
             </h3>
+            <p class="text-xs text-zinc-400">Top 3 Podium highlighted above the Top 10 points-scoring drivers</p>
           </div>
 
-          <!-- Top 3 Podium Cards -->
-          <div id="post-podium-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto"></div>
+          <!-- Top 3 Highlighted Podium Cards (P1, P2, P3) -->
+          <div id="post-podium-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto items-end"></div>
 
-          <!-- Strictly Top 10 Finishers List Below -->
-          <div class="border-t border-zinc-800 pt-5 max-w-3xl mx-auto space-y-3">
+          <!-- Strictly Top 10 Finishers with Points Scored -->
+          <div class="border-t border-zinc-800 pt-5 max-w-4xl mx-auto space-y-3">
             <div class="flex justify-between items-center">
-              <h4 class="font-display font-bold text-sm sm:text-base text-white">🏆 Official Top 10 Classification</h4>
-              <span class="text-[11px] text-zinc-400 font-mono">POINTS FINISHERS ONLY</span>
+              <h4 class="font-display font-bold text-sm sm:text-base text-white">🏆 Top 10 Race End Classification & Points</h4>
+              <span class="text-[11px] text-emerald-400 font-mono font-bold">P1–P10 POINTS SCORERS</span>
             </div>
             <div id="post-top10-list" class="space-y-2 text-xs sm:text-sm"></div>
           </div>
@@ -869,10 +988,10 @@
 
     </div>
   </div>
-
   <script>
     const API_BASE = "https://api.jolpi.ca/ergast/f1/current";
     const F1_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+    const SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1];
     const MAX_CLIP_DURATION_MS = 10000;
 
     const ADFREE_INVIDIOUS_APIS = [
@@ -915,7 +1034,7 @@
       "yas_marina": { country: "Abu Dhabi", flag: "🇦🇪", mapSlug: "Abu_Dhabi_Circuit", length: "5.281km", firstGp: "2009", laps: "58", distance: "306.183km", lapRecord: "1:26.103", recordHolder: "Max Verstappen (2021)" }
     };
 
-    // ================= 7 ICONIC F1 RADIO MESSAGES (LOCAL MP3 + MULTI-MIRROR) =================
+    // ================= 7 ICONIC F1 RADIO MESSAGES =================
     const ICONIC_RADIO_MESSAGES = [
       {
         id: 1,
@@ -1040,21 +1159,36 @@
     let lastReactionSec = null;
     let lastReactionTier = "";
 
-    // ================= LIVE TELEMETRY & FIA TIMING TOWER STATE =================
-    let telemetryMode = "auto"; // "auto" | "standby" | "live" | "post"
+    // ================= FULL 20-DRIVER GRID & MULTI-SESSION FIA TELEMETRY STATE =================
+    let telemetryMode = "live"; // Default to "live" so you can immediately see the demo! ("auto" | "standby" | "live" | "post")
+    let fiaSessionType = "race"; // "fp" | "quali" | "sprint" | "race"
+    let fiaSubSession = "Q3";    // "FP1"|"FP2"|"FP3" or "Q1"|"Q2"|"Q3"
+    let fiaTrackStatus = "green"; // "green" | "sc" | "vsc" | "red"
+
     let liveTowerDrivers = [
-      { id: "verstappen", num: 1, code: "VER", name: "Max Verstappen", team: "Red Bull Racing", tyre: "M", gap: "LEADER", move: 0 },
-      { id: "leclerc", num: 16, code: "LEC", name: "Charles Leclerc", team: "Ferrari", tyre: "H", gap: "+1.142s", move: 0 },
-      { id: "antonelli", num: 12, code: "ANT", name: "Kimi Antonelli", team: "Mercedes", tyre: "M", gap: "+2.480s", move: 0 },
-      { id: "norris", num: 4, code: "NOR", name: "Lando Norris", team: "McLaren", tyre: "H", gap: "+3.915s", move: 0 },
-      { id: "hamilton", num: 44, code: "HAM", name: "Lewis Hamilton", team: "Ferrari", tyre: "M", gap: "+5.120s", move: 0 },
-      { id: "russell", num: 63, code: "RUS", name: "George Russell", team: "Mercedes", tyre: "H", gap: "+6.890s", move: 0 },
-      { id: "piastri", num: 81, code: "PIA", name: "Oscar Piastri", team: "McLaren", tyre: "M", gap: "+8.340s", move: 0 },
-      { id: "sainz", num: 55, code: "SAI", name: "Carlos Sainz", team: "Williams", tyre: "S", gap: "+11.210s", move: 0 },
-      { id: "alonso", num: 14, code: "ALO", name: "Fernando Alonso", team: "Aston Martin", tyre: "H", gap: "+14.605s", move: 0 },
-      { id: "gasly", num: 10, code: "GAS", name: "Pierre Gasly", team: "Alpine", tyre: "M", gap: "+17.920s", move: 0 }
+      { id: "verstappen", num: 1, code: "VER", name: "Max Verstappen", team: "Red Bull Racing", tyre: "M", tyreAge: 14, stops: 1, inPit: false, fastestLap: true, bestLap: "1:34.812", gap: "LEADER", lapsRun: 22, s1: "p", s2: "g", s3: "p", move: 0 },
+      { id: "hamilton", num: 44, code: "HAM", name: "Lewis Hamilton", team: "Ferrari", tyre: "M", tyreAge: 14, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.094", gap: "+1.328s", lapsRun: 21, s1: "g", s2: "p", s3: "g", move: 0 },
+      { id: "norris", num: 4, code: "NOR", name: "Lando Norris", team: "McLaren", tyre: "H", tyreAge: 18, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.218", gap: "+2.623s", lapsRun: 23, s1: "g", s2: "g", s3: "g", move: 0 },
+      { id: "piastri", num: 81, code: "PIA", name: "Oscar Piastri", team: "McLaren", tyre: "M", tyreAge: 12, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.390", gap: "+3.899s", lapsRun: 20, s1: "g", s2: "y", s3: "g", move: 0 },
+      { id: "leclerc", num: 16, code: "LEC", name: "Charles Leclerc", team: "Ferrari", tyre: "H", tyreAge: 19, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.442", gap: "+5.065s", lapsRun: 24, s1: "p", s2: "g", s3: "y", move: 0 },
+      { id: "antonelli", num: 12, code: "ANT", name: "Kimi Antonelli", team: "Mercedes", tyre: "M", tyreAge: 11, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.610", gap: "+6.304s", lapsRun: 19, s1: "g", s2: "g", s3: "y", move: 0 },
+      { id: "sainz", num: 55, code: "SAI", name: "Carlos Sainz", team: "Williams", tyre: "S", tyreAge: 6, stops: 2, inPit: false, fastestLap: false, bestLap: "1:35.788", gap: "+7.121s", lapsRun: 18, s1: "y", s2: "g", s3: "g", move: 0 },
+      { id: "russell", num: 63, code: "RUS", name: "George Russell", team: "Mercedes", tyre: "H", tyreAge: 20, stops: 1, inPit: false, fastestLap: false, bestLap: "1:35.915", gap: "+8.574s", lapsRun: 22, s1: "g", s2: "y", s3: "g", move: 0 },
+      { id: "alonso", num: 14, code: "ALO", name: "Fernando Alonso", team: "Aston Martin", tyre: "H", tyreAge: 17, stops: 1, inPit: true, fastestLap: false, bestLap: "1:36.104", gap: "IN PIT", lapsRun: 17, s1: "y", s2: "y", s3: "g", move: 0 },
+      { id: "gasly", num: 10, code: "GAS", name: "Pierre Gasly", team: "Alpine", tyre: "M", tyreAge: 15, stops: 1, inPit: false, fastestLap: false, bestLap: "1:36.290", gap: "+10.864s", lapsRun: 21, s1: "g", s2: "y", s3: "y", move: 0 },
+      { id: "hadjar", num: 6, code: "HAD", name: "Isack Hadjar", team: "Red Bull Racing", tyre: "M", tyreAge: 13, stops: 1, inPit: false, fastestLap: false, bestLap: "1:36.412", gap: "+12.410s", lapsRun: 20, s1: "g", s2: "g", s3: "y", move: 0 },
+      { id: "lawson", num: 30, code: "LAW", name: "Liam Lawson", team: "RB F1 Team", tyre: "H", tyreAge: 21, stops: 1, inPit: false, fastestLap: false, bestLap: "1:36.550", gap: "+14.085s", lapsRun: 22, s1: "y", s2: "g", s3: "y", move: 0 },
+      { id: "arvid_lindblad", num: 40, code: "LIN", name: "Arvid Lindblad", team: "RB F1 Team", tyre: "S", tyreAge: 7, stops: 2, inPit: false, fastestLap: false, bestLap: "1:36.680", gap: "+15.720s", lapsRun: 19, s1: "g", s2: "y", s3: "g", move: 0 },
+      { id: "albon", num: 23, code: "ALB", name: "Alexander Albon", team: "Williams", tyre: "M", tyreAge: 16, stops: 1, inPit: false, fastestLap: false, bestLap: "1:36.815", gap: "+17.340s", lapsRun: 21, s1: "y", s2: "y", s3: "g", move: 0 },
+      { id: "colapinto", num: 43, code: "COL", name: "Franco Colapinto", team: "Alpine", tyre: "H", tyreAge: 18, stops: 1, inPit: false, fastestLap: false, bestLap: "1:36.940", gap: "+19.112s", lapsRun: 20, s1: "y", s2: "g", s3: "y", move: 0 },
+      { id: "bearman", num: 87, code: "BEA", name: "Oliver Bearman", team: "Haas F1 Team", tyre: "M", tyreAge: 10, stops: 2, inPit: true, fastestLap: false, bestLap: "1:37.105", gap: "IN PIT", lapsRun: 16, s1: "y", s2: "y", s3: "y", move: 0 },
+      { id: "hulkenberg", num: 27, code: "HUL", name: "Nico Hülkenberg", team: "Audi", tyre: "H", tyreAge: 22, stops: 1, inPit: false, fastestLap: false, bestLap: "1:37.260", gap: "+22.480s", lapsRun: 23, s1: "y", s2: "g", s3: "y", move: 0 },
+      { id: "ocon", num: 31, code: "OCO", name: "Esteban Ocon", team: "Haas F1 Team", tyre: "M", tyreAge: 15, stops: 1, inPit: false, fastestLap: false, bestLap: "1:37.410", gap: "+24.190s", lapsRun: 18, s1: "y", s2: "y", s3: "y", move: 0 },
+      { id: "bortoleto", num: 5, code: "BOR", name: "Gabriel Bortoleto", team: "Audi", tyre: "S", tyreAge: 8, stops: 2, inPit: false, fastestLap: false, bestLap: "1:37.590", gap: "+26.805s", lapsRun: 19, s1: "g", s2: "y", s3: "y", move: 0 },
+      { id: "stroll", num: 18, code: "STR", name: "Lance Stroll", team: "Aston Martin", tyre: "H", tyreAge: 23, stops: 1, inPit: false, fastestLap: false, bestLap: "1:37.820", gap: "+29.410s", lapsRun: 17, s1: "y", s2: "y", s3: "y", move: 0 }
     ];
-    let selectedWheelDriver = liveTowerDrivers[1]; // Default Charles Leclerc #16
+
+    let selectedWheelDriver = liveTowerDrivers[0]; // Default Max Verstappen #1[span_0](start_span)[span_0](end_span)
     let wheelTelemetryTimer = null;
     let overtakeSimTimer = null;
     let currentSimLap = 42;
@@ -1315,10 +1449,10 @@
       });
     }
 
-    // ================= LIVE TELEMETRY, FLIP OVERTAKES & STEERING WHEEL ENGINE =================
+    // ================= REDESIGNED FIA 20-DRIVER MULTI-SESSION TELEMETRY ENGINE =================
     function initTelemetryTab() {
-      renderTimingTower();
-      selectDriverForWheel(liveTowerDrivers[1].num);
+      setFiaSessionType("race");
+      selectDriverForWheel(liveTowerDrivers[0].num);
       evaluateTelemetryState();
     }
 
@@ -1334,6 +1468,186 @@
         }
       });
       evaluateTelemetryState();
+    }
+
+    // Switch between Free Practice (FP), Qualifying, Sprint Race, and Race Day
+    function setFiaSessionType(type) {
+      fiaSessionType = type;
+
+      ["fp", "quali", "sprint", "race"].forEach(t => {
+        const btn = document.getElementById(`fia-tab-${t}`);
+        if (!btn) return;
+        if (t === type) {
+          btn.className = "py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-red-500 bg-red-600 text-white shadow-lg transition flex flex-col items-center gap-0.5";
+        } else {
+          btn.className = "py-2.5 px-3 rounded-xl font-display font-bold text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition flex flex-col items-center gap-0.5";
+        }
+      });
+
+      const subBar = document.getElementById("fia-subsession-bar");
+      const subPills = document.getElementById("fia-subsession-pills");
+      const knockoutNote = document.getElementById("fia-knockout-note");
+      const sectorLegend = document.getElementById("sector-legend-bar");
+      const subtitle = document.getElementById("fia-session-subtitle");
+      const towerHeader = document.getElementById("tower-header-title");
+      const colHeader = document.getElementById("tower-col-header");
+      const lapCounter = document.getElementById("fia-lap-counter");
+
+      if (type === "fp") {
+        fiaSubSession = "FP1";
+        subBar.classList.remove("hidden");
+        sectorLegend.classList.remove("hidden");
+        renderSubSessionPills(["FP1", "FP2", "FP3"]);
+        knockoutNote.textContent = "60-Min Practice Telemetry • Best Laps, Sector Blocks & Laps Run";
+        subtitle.textContent = "Free Practice • S1/S2/S3 Micro-Sectors, Tyre Compound & Lap Count";
+        towerHeader.textContent = "⏱️ FIA Free Practice Classification (All 20 Drivers)";
+        colHeader.textContent = "SECTORS • TYRE • LAPS • BEST / GAP";
+        lapCounter.textContent = "FP1 • 18:42 REMAINING";
+      } else if (type === "quali") {
+        fiaSubSession = "Q1";
+        subBar.classList.remove("hidden");
+        sectorLegend.classList.remove("hidden");
+        renderSubSessionPills(["Q1", "Q2", "Q3"]);
+        knockoutNote.textContent = "⚠️ DROP ZONE: P16–P20 Eliminated at end of Q1";
+        subtitle.textContent = "Qualifying Knockout • Flying Laps, Sector Colours & Elimination Line";
+        towerHeader.textContent = "🟣 FIA Qualifying Knockout Tower (All 20 Drivers)";
+        colHeader.textContent = "SECTORS • TYRE • BEST LAP / DELTA";
+        lapCounter.textContent = "Q1 • 03:15 REMAINING";
+      } else if (type === "sprint") {
+        subBar.classList.add("hidden");
+        sectorLegend.classList.add("hidden");
+        subtitle.textContent = "F1 Sprint (100km Dash) • Top 8 Score Championship Points (+8 to +1)";
+        towerHeader.textContent = "⚡ FIA Sprint Race Live Tower (All 20 Drivers)";
+        colHeader.textContent = "PTS • TYRE • PIT • INTERVAL";
+        lapCounter.textContent = "SPRINT LAP 14 / 19";
+      } else {
+        subBar.classList.add("hidden");
+        sectorLegend.classList.add("hidden");
+        const specs = selectedRace ? getCircuitTelemetry(selectedRace) : null;
+        totalSimLaps = specs ? parseInt(specs.laps) || 56 : 56;
+        subtitle.textContent = "Grand Prix Race Day • 20 Cars • Pit Lane [P], Tyre Compound & Fastest Lap";
+        towerHeader.textContent = "🏁 FIA Grand Prix Live Timing Tower (All 20 Drivers)";
+        colHeader.textContent = "TYRE • STOPS • INTERVAL";
+        lapCounter.textContent = `LAP ${currentSimLap} / ${totalSimLaps}`;
+      }
+
+      renderTimingTower();
+    }
+
+    function renderSubSessionPills(pills) {
+      const container = document.getElementById("fia-subsession-pills");
+      container.innerHTML = pills.map(p => `
+        <button onclick="selectSubSession('${p}')" class="px-3 py-1 rounded-lg font-display font-bold text-xs transition ${fiaSubSession === p ? 'bg-amber-400 text-black' : 'bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-white'}">
+          ${p}
+        </button>
+      `).join("");
+    }
+
+    function selectSubSession(sub) {
+      fiaSubSession = sub;
+      const knockoutNote = document.getElementById("fia-knockout-note");
+      const lapCounter = document.getElementById("fia-lap-counter");
+
+      if (fiaSessionType === "fp") {
+        renderSubSessionPills(["FP1", "FP2", "FP3"]);
+        lapCounter.textContent = `${sub} • 24:10 REMAINING`;
+      } else if (fiaSessionType === "quali") {
+        renderSubSessionPills(["Q1", "Q2", "Q3"]);
+        lapCounter.textContent = `${sub} • 02:45 REMAINING`;
+        if (sub === "Q1") knockoutNote.textContent = "⚠️ Q1 DROP ZONE: P16–P20 Eliminated";
+        else if (sub === "Q2") knockoutNote.textContent = "⚠️ Q2 DROP ZONE: P11–P15 Eliminated (P16–P20 OUT)";
+        else knockoutNote.textContent = "🔥 Q3 POLE SHOOTOUT: Top 10 Battle for Pole Position";
+      }
+      renderTimingTower();
+    }
+
+    // Deploy Green Flag, Safety Car (SC), Virtual Safety Car (VSC), or Red Flag
+    function setFiaTrackStatus(status) {
+      fiaTrackStatus = status;
+      playPitwallBeep();
+
+      const banner = document.getElementById("fia-track-banner");
+      const icon = document.getElementById("fia-flag-icon");
+      const title = document.getElementById("fia-flag-title");
+      const desc = document.getElementById("fia-flag-desc");
+
+      ["green", "sc", "vsc", "red"].forEach(s => {
+        const btn = document.getElementById(`flag-btn-${s}`);
+        if (!btn) return;
+        btn.classList.remove("ring-2", "ring-white");
+        if (s === status) btn.classList.add("ring-2", "ring-white");
+      });
+
+      if (status === "green") {
+        banner.className = "rounded-xl p-3 border border-emerald-500/50 bg-emerald-500/15 flex flex-wrap items-center justify-between gap-2 transition-all";
+        icon.textContent = "🟢";
+        title.textContent = "TRACK CLEAR • GREEN FLAG • DRS ENABLED";
+        title.className = "font-display font-black text-xs sm:text-sm text-emerald-400 tracking-wider block";
+        desc.textContent = "Normal racing conditions — Overtaking & DRS active in Zones 1 & 2";
+      } else if (status === "sc") {
+        banner.className = "sc-banner-pulse rounded-xl p-3 border-2 border-amber-400 bg-amber-500/25 flex flex-wrap items-center justify-between gap-2 transition-all shadow-[0_0_25px_rgba(250,204,21,0.3)]";
+        icon.textContent = "🟡";
+        title.textContent = "⚠️ SAFETY CAR DEPLOYED (SC) • DRS DISABLED";
+        title.className = "font-display font-black text-xs sm:text-sm text-amber-300 tracking-wider block";
+        desc.textContent = "All cars bunching up behind Bernd Mayländer — No overtaking allowed • Cheap Pit Window Open!";
+        // Bunch up intervals under Safety Car
+        liveTowerDrivers.forEach((d, i) => {
+          if (i === 0) d.gap = "SC LEADER";
+          else if (!d.inPit) d.gap = `+${(i * 0.42).toFixed(3)}s`;
+        });
+      } else if (status === "vsc") {
+        banner.className = "sc-banner-pulse rounded-xl p-3 border-2 border-orange-400 bg-orange-500/20 flex flex-wrap items-center justify-between gap-2 transition-all shadow-[0_0_25px_rgba(249,115,22,0.25)]";
+        icon.textContent = "🟠";
+        title.textContent = "🟠 VIRTUAL SAFETY CAR (VSC) • MAINTAIN +40% DELTA";
+        title.className = "font-display font-black text-xs sm:text-sm text-orange-300 tracking-wider block";
+        desc.textContent = "Drivers must stay above minimum FIA marshalling sector time — DRS Disabled";
+      } else if (status === "red") {
+        banner.className = "sc-banner-pulse rounded-xl p-3 border-2 border-red-500 bg-red-600/25 flex flex-wrap items-center justify-between gap-2 transition-all shadow-[0_0_25px_rgba(239,68,68,0.35)]";
+        icon.textContent = "🔴";
+        title.textContent = "🚩 RED FLAG • SESSION SUSPENDED • RETURN TO PIT LANE";
+        title.className = "font-display font-black text-xs sm:text-sm text-red-300 tracking-wider block";
+        desc.textContent = "All 20 cars returning to fast lane — Free tyre compound change permitted";
+      }
+
+      renderTimingTower();
+      updateSteeringWheelMetrics();
+    }
+
+    // Box a random driver into or out of the Pit Lane [P]
+    function triggerRandomPitStop() {
+      playPitwallBeep();
+      const idx = Math.floor(1 + Math.random() * (liveTowerDrivers.length - 1));
+      const d = liveTowerDrivers[idx];
+      d.inPit = !d.inPit;
+      if (d.inPit) {
+        d.gap = "IN PIT";
+      } else {
+        d.stops = (d.stops || 1) + 1;
+        const compounds = ["S", "M", "H"];
+        d.tyre = compounds[Math.floor(Math.random() * compounds.length)];
+        d.tyreAge = 1;
+        d.gap = `+${(idx * 1.35).toFixed(3)}s`;
+      }
+      renderTimingTower();
+      updateSteeringWheelMetrics();
+    }
+
+    // Assign Purple Fastest Lap to a random top-10 driver
+    function triggerNewFastestLap() {
+      playPitwallBeep();
+      liveTowerDrivers.forEach(d => d.fastestLap = false);
+      const idx = Math.floor(Math.random() * 8);
+      const d = liveTowerDrivers[idx];
+      d.fastestLap = true;
+      const newLap = `1:34.${Math.floor(100 + Math.random() * 690)}`;
+      d.bestLap = newLap;
+      d.s1 = "p"; d.s2 = "p"; d.s3 = "g";
+
+      const flBanner = document.getElementById("fia-fastest-lap-banner");
+      if (flBanner) flBanner.textContent = `⏱️ FL: ${d.code} (${newLap})`;
+
+      renderTimingTower();
+      updateSteeringWheelMetrics();
     }
 
     function detectAutoSessionPhase() {
@@ -1352,13 +1666,9 @@
       const gpStart = new Date(`${selectedRace.date}T${selectedRace.time || '14:00:00Z'}`).getTime();
       sessionTimes.push(gpStart);
 
-      // Check if any session is currently on track (within 2 hours of start)
       const isLiveNow = sessionTimes.some(st => now >= st && now <= st + TWO_HOURS_MS);
       if (isLiveNow) return "live";
-
-      // Check if Grand Prix finished within the last 6 hours
       if (now > gpStart + TWO_HOURS_MS && now <= gpStart + SIX_HOURS_MS) return "post";
-
       return "standby";
     }
 
@@ -1386,21 +1696,27 @@
             `Next On-Track Session: ${selectedRace.raceName} (${selectedRace.Circuit.circuitName})`;
         }
       } else if (effectiveState === "live") {
-        badge.textContent = "🟢 LIVE FIA TIMING TOWER & STEERING WHEEL TELEMETRY";
+        badge.textContent = "🟢 LIVE 20-CAR FIA TIMING TOWER & STEERING WHEEL TELEMETRY";
         dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping";
-        const specs = selectedRace ? getCircuitTelemetry(selectedRace) : null;
-        totalSimLaps = specs ? parseInt(specs.laps) || 56 : 56;
-        document.getElementById("fia-lap-counter").textContent = `LAP ${currentSimLap} / ${totalSimLaps}`;
         renderTimingTower();
         startWheelTelemetryLoop();
-        overtakeSimTimer = setInterval(triggerSimulatedOvertake, 4800);
+        overtakeSimTimer = setInterval(() => {
+          if (fiaTrackStatus === "green") triggerSimulatedOvertake();
+        }, 5200);
       } else if (effectiveState === "post") {
-        badge.textContent = "🏁 SESSION ENDED — PODIUM WINNERS & TOP 10";
+        badge.textContent = "🏁 RACE END — P1-P3 PODIUM & TOP 10 POINTS FINISHERS";
         dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
         renderPostSessionTop10();
       }
     }
 
+    function getSectorBlockColor(code) {
+      if (code === "p") return "bg-purple-500 shadow-[0_0_6px_#a855f7]";
+      if (code === "g") return "bg-emerald-500";
+      return "bg-amber-400";
+    }
+
+    // Renders all 20 drivers tailored to FP, Qualifying, Sprint, or Race Day
     function renderTimingTower() {
       const tower = document.getElementById("fia-timing-tower");
       if (!tower) return;
@@ -1413,17 +1729,95 @@
                           "border-white text-white";
 
         const moveBadge = d.move > 0
-          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-display font-black text-[11px] animate-bounce">▲${d.move}</span>`
+          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-display font-black text-[10px] animate-bounce">▲${d.move}</span>`
           : d.move < 0
-          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-display font-black text-[11px]">▼${Math.abs(d.move)}</span>`
-          : `<span class="text-zinc-600 font-mono text-xs w-5 text-center">•</span>`;
+          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-display font-black text-[10px]">▼${Math.abs(d.move)}</span>`
+          : `<span class="text-zinc-600 font-mono text-[10px] w-4 text-center">•</span>`;
 
         const glowClass = d.move > 0 ? "overtake-up-glow" : d.move < 0 ? "overtake-down-glow" : "";
+        const flRowClass = d.fastestLap ? "fastest-lap-glow" : "";
+
+        // Pit Lane Badge [P]
+        const pitBadge = (d.inPit || fiaTrackStatus === "red")
+          ? `<span class="px-1.5 py-0.5 rounded bg-amber-400 text-black font-display font-black text-[10px] animate-pulse" title="Car in Pit Lane">P</span>`
+          : "";
+
+        // Fastest Lap Badge
+        const flBadge = d.fastestLap
+          ? `<span class="px-1.5 py-0.5 rounded bg-purple-600 text-white font-display font-black text-[9px] shadow-[0_0_10px_#9333ea]" title="Fastest Lap">⏱️ FL</span>`
+          : "";
+
+        // Right-side telemetry columns depending on session format
+        let rightTelemetryHtml = "";
+
+        if (fiaSessionType === "fp") {
+          const delta = idx === 0 ? d.bestLap : `+${(idx * 0.165).toFixed(3)}s`;
+          rightTelemetryHtml = `
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="hidden sm:flex items-center gap-1" title="Sector 1 • Sector 2 • Sector 3">
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s1)}"></span>
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s2)}"></span>
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s3)}"></span>
+              </div>
+              ${pitBadge}
+              <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
+              <span class="text-[10px] font-mono text-zinc-400 w-8 text-center">${d.lapsRun}L</span>
+              <span class="font-mono font-bold text-xs ${idx === 0 ? 'text-purple-400' : 'text-zinc-200'} w-20 text-right">${delta}</span>
+            </div>
+          `;
+        } else if (fiaSessionType === "quali") {
+          const isDropZone = (fiaSubSession === "Q1" && pos >= 16) || (fiaSubSession === "Q2" && pos >= 11 && pos <= 15);
+          const isEliminated = (fiaSubSession === "Q2" && pos >= 16) || (fiaSubSession === "Q3" && pos >= 11);
+          const delta = isEliminated ? "OUT" : (idx === 0 ? d.bestLap : `+${(idx * 0.142).toFixed(3)}s`);
+
+          rightTelemetryHtml = `
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="hidden sm:flex items-center gap-1">
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s1)}"></span>
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s2)}"></span>
+                <span class="w-2.5 h-3.5 rounded-sm ${getSectorBlockColor(d.s3)}"></span>
+              </div>
+              ${isDropZone ? `<span class="text-[9px] font-display font-bold px-1.5 py-0.5 rounded bg-red-600/30 text-red-300 border border-red-500/40">DROP</span>` : ''}
+              ${pitBadge}
+              <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
+              <span class="font-mono font-bold text-xs ${idx === 0 ? 'text-purple-400' : isEliminated ? 'text-zinc-600' : 'text-zinc-200'} w-20 text-right">${delta}</span>
+            </div>
+          `;
+        } else if (fiaSessionType === "sprint") {
+          const sprintPts = idx < 8 ? `+${SPRINT_POINTS[idx]}P` : "";
+          rightTelemetryHtml = `
+            <div class="flex items-center gap-2 shrink-0">
+              ${sprintPts ? `<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">${sprintPts}</span>` : ''}
+              ${flBadge}
+              ${pitBadge}
+              <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
+              <span class="font-mono font-bold text-xs ${d.inPit ? 'text-amber-400' : 'text-zinc-300'} w-16 text-right">${idx === 0 ? 'LEADER' : d.gap}</span>
+            </div>
+          `;
+        } else {
+          // Race Day (Grand Prix)
+          rightTelemetryHtml = `
+            <div class="flex items-center gap-2 shrink-0">
+              ${flBadge}
+              ${pitBadge}
+              <div class="flex items-center gap-1" title="Tyre Compound & Pit Stops">
+                <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
+                <span class="text-[10px] font-mono text-zinc-500 hidden sm:inline">${d.stops}STOP</span>
+              </div>
+              <span class="font-mono font-bold text-xs ${d.inPit ? 'text-amber-400 font-black' : 'text-zinc-200'} w-16 text-right">${idx === 0 ? 'LEADER' : d.gap}</span>
+            </div>
+          `;
+        }
+
+        // Knockout cutoff divider line in Qualifying
+        const cutoffDivider = (fiaSessionType === "quali" && ((fiaSubSession === "Q1" && pos === 15) || (fiaSubSession === "Q2" && pos === 10) || (fiaSubSession === "Q3" && pos === 10)))
+          ? `<div class="border-b-2 border-dashed border-red-500/70 my-2 text-center"><span class="text-[9px] font-display font-bold text-red-400 bg-zinc-950 px-2 uppercase">🔻 Knockout Elimination Cutoff Line 🔻</span></div>`
+          : "";
 
         return `
-          <div data-driver-num="${d.num}" onclick="selectDriverForWheel(${d.num})" class="tower-row cursor-pointer bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between gap-2 transition-colors ${glowClass} ${isSelected ? 'selected-driver-row' : ''}">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="font-display font-black text-xs w-6 text-zinc-400">P${pos}</span>
+          <div data-driver-num="${d.num}" onclick="selectDriverForWheel(${d.num})" class="tower-row cursor-pointer bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 transition-colors ${glowClass} ${flRowClass} ${isSelected ? 'selected-driver-row' : ''}">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-display font-black text-xs w-6 ${pos <= 3 ? 'theme-sec-text' : 'text-zinc-400'}">P${pos}</span>
               ${moveBadge}
               <span class="font-display font-bold text-xs px-1.5 py-0.5 rounded bg-zinc-900 text-white border border-zinc-700">${d.code}</span>
               <div class="min-w-0 truncate">
@@ -1431,57 +1825,48 @@
                 <span class="text-[10px] text-zinc-500 block truncate">${d.team}</span>
               </div>
             </div>
-
-            <div class="flex items-center gap-2.5 shrink-0">
-              <span class="w-6 h-6 rounded-full border-2 ${tyreColor} font-display font-black text-[10px] flex items-center justify-center bg-black">${d.tyre}</span>
-              <span class="font-mono font-bold text-xs text-zinc-300 w-16 text-right">${idx === 0 ? 'LEADER' : d.gap}</span>
-            </div>
+            ${rightTelemetryHtml}
           </div>
+          ${cutoffDivider}
         `;
       }).join("");
     }
 
-    // Smooth FLIP DOM Animation when one driver overtakes another!
+    // Smooth FLIP DOM Animation across the 20-driver tower
     function triggerSimulatedOvertake() {
       const tower = document.getElementById("fia-timing-tower");
       if (!tower || liveTowerDrivers.length < 2) return;
 
-      // 1. Record FIRST bounding boxes before overtake
       const prevRects = {};
       tower.querySelectorAll(".tower-row").forEach(row => {
         prevRects[row.getAttribute("data-driver-num")] = row.getBoundingClientRect().top;
       });
 
-      // Reset old move badges
       liveTowerDrivers.forEach(d => d.move = 0);
 
-      // Pick random pair to swap (e.g. P2 overtakes P1, or P4 overtakes P3)
       const idx = Math.floor(1 + Math.random() * (liveTowerDrivers.length - 1));
       const overtaker = liveTowerDrivers[idx];
       const overtaken = liveTowerDrivers[idx - 1];
 
+      overtaker.inPit = false;
       overtaker.move = 1;
       overtaken.move = -1;
 
-      // Swap positions in array
       liveTowerDrivers[idx - 1] = overtaker;
       liveTowerDrivers[idx] = overtaken;
 
-      // Recalculate clean intervals
       liveTowerDrivers.forEach((d, i) => {
         if (i === 0) d.gap = "LEADER";
-        else d.gap = `+${(i * 1.18 + Math.random() * 0.45).toFixed(3)}s`;
+        else if (!d.inPit) d.gap = `+${(i * 1.18 + Math.random() * 0.45).toFixed(3)}s`;
       });
 
-      if (currentSimLap < totalSimLaps && Math.random() > 0.65) {
+      if (fiaSessionType === "race" && currentSimLap < totalSimLaps && Math.random() > 0.65) {
         currentSimLap++;
         document.getElementById("fia-lap-counter").textContent = `LAP ${currentSimLap} / ${totalSimLaps}`;
       }
 
-      // 2. Render updated DOM
       renderTimingTower();
 
-      // 3. Apply FLIP Invert & Play Smooth Slide Animation
       tower.querySelectorAll(".tower-row").forEach(row => {
         const num = row.getAttribute("data-driver-num");
         const oldTop = prevRects[num];
@@ -1516,31 +1901,64 @@
       wheelTelemetryTimer = setInterval(updateSteeringWheelMetrics, 220);
     }
 
-    async function updateSteeringWheelMetrics() {
+    function updateSteeringWheelMetrics() {
       if (!selectedWheelDriver) return;
 
-      // Realistic F1 cornering -> straight-line telemetry physics cycle
+      const compoundNames = { S: "SOFT", M: "MEDIUM", H: "HARD" };
+      document.getElementById("wheel-tyre-info").textContent = `${compoundNames[selectedWheelDriver.tyre] || 'MEDIUM'} (${selectedWheelDriver.tyreAge}L)`;
+      document.getElementById("wheel-best-lap").textContent = selectedWheelDriver.bestLap;
+
+      const pitStatusEl = document.getElementById("wheel-pit-status");
+      const ersEl = document.getElementById("wheel-ers-mode");
+
+      // Handle Pit Lane or Red Flag speed limiter
+      if (selectedWheelDriver.inPit || fiaTrackStatus === "red") {
+        document.getElementById("wheel-speed").textContent = fiaTrackStatus === "red" ? "0" : "80";
+        document.getElementById("wheel-gear").textContent = fiaTrackStatus === "red" ? "N" : "2";
+        document.getElementById("wheel-rpm").textContent = fiaTrackStatus === "red" ? "4,200" : "7,800";
+        document.getElementById("wheel-throttle-txt").textContent = fiaTrackStatus === "red" ? "0%" : "25%";
+        document.getElementById("wheel-throttle-bar").style.width = fiaTrackStatus === "red" ? "0%" : "25%";
+        document.getElementById("wheel-brake-txt").textContent = "0%";
+        document.getElementById("wheel-brake-bar").style.width = "0%";
+        pitStatusEl.textContent = fiaTrackStatus === "red" ? "RED FLAG BOX" : "PIT LIMITER [P]";
+        pitStatusEl.className = "font-display font-bold text-amber-400";
+        ersEl.textContent = "ERS: HARVEST";
+        return;
+      }
+
+      pitStatusEl.textContent = fiaTrackStatus === "green" ? "ON TRACK" : fiaTrackStatus.toUpperCase() + " PACE";
+      pitStatusEl.className = fiaTrackStatus === "green" ? "font-display font-bold text-emerald-400" : "font-display font-bold text-amber-400";
+
       wheelPhase = (wheelPhase + 0.22) % (Math.PI * 2);
-      const wave = (Math.sin(wheelPhase) + 1) / 2; // 0.0 (hairpin apex) to 1.0 (main straight)
+      const wave = (Math.sin(wheelPhase) + 1) / 2;
 
       let speed, gear, rpm, throttle, brake, drsOn;
 
-      if (wave > 0.28) {
-        // Accelerating / Full Straight
+      // Under Safety Car or VSC, cap speed and disable DRS
+      if (fiaTrackStatus === "sc" || fiaTrackStatus === "vsc") {
+        throttle = Math.round(35 + wave * 30);
+        brake = wave < 0.25 ? Math.round((0.25 - wave) * 180) : 0;
+        speed = Math.round(115 + wave * 75);
+        gear = Math.min(5, Math.max(2, Math.floor(speed / 38) + 1));
+        rpm = Math.round(7900 + wave * 2100);
+        drsOn = false;
+        ersEl.textContent = "ERS: CHARGE";
+      } else if (wave > 0.28) {
         throttle = Math.min(100, Math.round(65 + wave * 40));
         brake = 0;
         speed = Math.round(145 + wave * 188);
         gear = Math.min(8, Math.max(2, Math.floor(speed / 41) + 1));
         rpm = Math.round(10100 + ((speed * 37) % 3150));
         drsOn = speed > 292;
+        ersEl.textContent = "ERS: OVERTAKE";
       } else {
-        // Heavy Braking Zone into Corner Apex
         throttle = 0;
         brake = Math.min(100, Math.round((0.3 - wave) * 340));
         speed = Math.round(88 + wave * 210);
         gear = Math.max(2, Math.floor(speed / 42) + 1);
         rpm = Math.round(8600 + wave * 4200);
         drsOn = false;
+        ersEl.textContent = "ERS: DEPLOY";
       }
 
       document.getElementById("wheel-speed").textContent = speed;
@@ -1556,11 +1974,10 @@
         drsBadge.textContent = "DRS OPEN";
         drsBadge.className = "font-display font-black text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/50";
       } else {
-        drsBadge.textContent = "DRS CLOSED";
+        drsBadge.textContent = fiaTrackStatus === "green" ? "DRS CLOSED" : "DRS DISABLED";
         drsBadge.className = "font-display font-black text-xs px-2.5 py-1 rounded bg-zinc-900 text-zinc-500 border border-zinc-800";
       }
 
-      // Update 15 Shift LEDs (5 Green -> 5 Red -> 5 Blue)
       const leds = document.querySelectorAll("#wheel-rpm-leds .rpm-led");
       const activeLedCount = Math.min(15, Math.max(1, Math.round(((rpm - 8000) / 5200) * 15)));
       leds.forEach((led, idx) => {
@@ -1573,6 +1990,7 @@
       });
     }
 
+    // Renders P1, P2, P3 Podium Highlight above the Top 10 Points Scorers
     function renderPostSessionTop10() {
       const lastRace = allRaceResults.length > 0 ? allRaceResults[allRaceResults.length - 1] : null;
       const results = lastRace?.Results?.slice(0, 10) || liveTowerDrivers.slice(0, 10).map((d, i) => ({
@@ -1584,37 +2002,52 @@
       }));
 
       if (lastRace) {
-        document.getElementById("post-race-title").textContent = `${lastRace.raceName.toUpperCase()} — WINNERS & TOP 10`;
+        document.getElementById("post-race-title").textContent = `${lastRace.raceName.toUpperCase()} — P1-P3 PODIUM & TOP 10`;
       }
 
       const podium = results.slice(0, 3);
-      const medals = ["🥇 P1 WINNER", "🥈 P2 SECOND", "🥉 P3 THIRD"];
-      const borders = ["border-amber-400/80 bg-amber-500/10", "border-zinc-300/60 bg-zinc-400/10", "border-amber-700/70 bg-amber-800/10"];
+      const medals = ["🥇 P1 RACE WINNER", "🥈 P2 SECOND PLACE", "🥉 P3 THIRD PLACE"];
+      const borders = [
+        "border-amber-400 bg-gradient-to-b from-amber-500/20 to-zinc-950 sm:scale-105 shadow-[0_0_25px_rgba(250,204,21,0.25)]",
+        "border-zinc-300/70 bg-gradient-to-b from-zinc-400/15 to-zinc-950",
+        "border-amber-700/80 bg-gradient-to-b from-amber-700/15 to-zinc-950"
+      ];
 
       document.getElementById("post-podium-cards").innerHTML = podium.map((r, idx) => `
-        <div class="rounded-2xl border-2 ${borders[idx]} p-4 text-center space-y-1.5 shadow-lg">
-          <span class="font-display font-black text-xs theme-sec-text block">${medals[idx]}</span>
-          <h5 class="font-display font-black text-base sm:text-lg text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</h5>
+        <div class="rounded-2xl border-2 ${borders[idx]} p-4 text-center space-y-2 transition">
+          <span class="font-display font-black text-xs theme-sec-text block tracking-wider">${medals[idx]}</span>
+          <h5 class="font-display font-black text-lg sm:text-xl text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</h5>
           <p class="text-xs text-zinc-400 font-semibold">${r.Constructor.name}</p>
-          <span class="inline-block font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
-            +${r.points} PTS • ${r.Time?.time || 'Finished'}
-          </span>
+          <div class="pt-1 flex items-center justify-center gap-2">
+            <span class="font-display font-black text-sm px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              +${r.points || F1_POINTS[idx]} PTS
+            </span>
+            <span class="font-mono text-xs text-zinc-300 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+              ${r.Time?.time || 'Finished'}
+            </span>
+          </div>
         </div>
       `).join("");
 
-      document.getElementById("post-top10-list").innerHTML = results.slice(0, 10).map((r) => `
-        <div class="flex justify-between items-center bg-zinc-950 p-3 rounded-xl border border-zinc-800 gap-2">
-          <div class="flex items-center gap-2.5 min-w-0 truncate">
-            <span class="font-display font-black text-xs w-7 text-zinc-400">P${r.position}</span>
-            <span class="font-bold text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</span>
-            <span class="text-[11px] text-zinc-500 truncate">(${r.Constructor.name})</span>
+      document.getElementById("post-top10-list").innerHTML = results.slice(0, 10).map((r, idx) => {
+        const pts = r.points || F1_POINTS[idx] || 0;
+        const isPodium = idx < 3;
+        return `
+          <div class="flex justify-between items-center ${isPodium ? 'bg-zinc-900/90 border-amber-500/40' : 'bg-zinc-950 border-zinc-800'} p-3 rounded-xl border gap-2">
+            <div class="flex items-center gap-2.5 min-w-0 truncate">
+              <span class="font-display font-black text-xs w-8 ${isPodium ? 'theme-sec-text' : 'text-zinc-400'}">P${r.position}</span>
+              <span class="font-bold text-white truncate">${r.Driver.givenName} ${r.Driver.familyName}</span>
+              <span class="text-[11px] text-zinc-500 truncate">(${r.Constructor.name})</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0 font-mono">
+              <span class="text-xs text-zinc-400 hidden sm:inline">${r.Time?.time || 'Finished'}</span>
+              <span class="font-display font-bold text-xs px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                +${pts} PTS
+              </span>
+            </div>
           </div>
-          <div class="flex items-center gap-3 shrink-0 font-mono">
-            <span class="text-xs text-zinc-400 hidden sm:inline">${r.Time?.time || 'Finished'}</span>
-            <span class="font-bold theme-accent-text">+${r.points} PTS</span>
-          </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     // ================= LIGHTS OUT REACTION MINI-GAME LOGIC =================
